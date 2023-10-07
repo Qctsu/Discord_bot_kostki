@@ -2,49 +2,61 @@ import random
 import re
 from nextcord import Embed
 
+
 # Funkcja do testów
 async def test(message_content, display_name):
-    # Sprawdzanie czy wiadomość pasuje do wzorca rzutu
     test_match = re.match(r'!test (\d*)k(\d+)([+\-]\d+)?', message_content)
 
-    # Brak dopasowania - nie jest to prawidłowy rzut
     if test_match is None:
-        return None
+        return None, False
 
-    # Określa liczbę rzutów kostką, rodzaj kości i modyfikator
     num_dice = int(test_match.groups()[0]) if test_match.groups()[0] else 1
     dice_type = int(test_match.groups()[1])
     modifier = int(test_match.groups()[2]) if test_match.groups()[2] else 0
 
-    # Rzuty kostką i kością figury
     total_roll = 0
     all_rolls = []
     for _ in range(num_dice):
         roll = random.randint(1, dice_type)
-        while roll == dice_type:  # Exploding dice
+        while roll == dice_type:
             roll += random.randint(1, dice_type)
-        roll += modifier  # Dodawanie modyfikatora do rzutu
+        roll += modifier
         total_roll += roll
         all_rolls.append(roll)
 
-    wild_roll = 0
-    # Rzut kością figury (k6) z modyfikatorem
     wild_roll = random.randint(1, 6)
-    while wild_roll == 6:  # Exploding dice
+    while wild_roll == 6:
         wild_roll += random.randint(1, 6)
-    wild_roll += modifier  # Dodawanie modyfikatora do rzutu kością figury
+    wild_roll += modifier
 
-    # Dodawanie rzutu kością figury do sumy wszystkich rzutów
-    total_roll += wild_roll
+    highest_dice_roll = max(max(all_rolls), wild_roll)
+    higher_roll = max(total_roll, wild_roll)
 
-    # Tworzenie embeda
+    outcome = ""
+    can_reroll = True
+
+    if any(roll == 1 for roll in all_rolls) and wild_roll == 1:
+        outcome = "Krytyczny pech"
+        can_reroll = False
+    elif higher_roll < 4:
+        outcome = "Porażka"
+    elif 4 <= higher_roll < 8:
+        outcome = "Sukces"
+    elif higher_roll >= 8:
+        outcome = "Przebicie"
+
     embed = Embed(
         title=f"{display_name} wykonuje test kością k{dice_type}",
-        description=f"Wyniki Kostek: {', '.join([str(roll) for roll in all_rolls])}\nWynik Kości Figury: {wild_roll}",
+        description=(
+            f"Wyniki Kostek: {', '.join([str(roll) for roll in all_rolls])}\n"
+            f"Wynik Kości Figury: {wild_roll}\n\n"
+            f"Najwyższy rzut: **{highest_dice_roll}**\n"
+            f"Wynik: **{outcome}**"
+        ),
         color=0x3498db
     )
 
-    return embed
+    return embed, can_reroll
 
 
 async def damage(message_content, display_name):
@@ -94,3 +106,43 @@ async def damage(message_content, display_name):
     )
 
     return embed
+
+
+async def handle_reaction_add2(reaction, user, bot, user_last_commands):
+    if user == bot.user:
+        return
+
+    message = reaction.message
+
+    # Sprawdź, czy reakcja jest ":x:"
+    if reaction.emoji == '❌' and message.author == bot.user:
+        # Usuń wszystkie reakcje z wiadomości
+        await reaction.message.clear_reactions()
+
+    # Sprawdzanie czy reakcja jest ":arrows_counterclockwise:" i czy wiadomość zawiera "!test"
+    elif reaction.emoji == '🔄' and message.author == bot.user:
+        if message.id in user_last_commands:
+            user_id = user_last_commands[message.id]["user_id"]  # Pobierz nazwę użytkownika po ID wiadomości
+            command = user_last_commands[message.id]["command"]
+
+            # Wykonaj przerzut używając komendy zapisanej w user_last_commands
+            result = await test(command, user_id)
+
+            if result:
+                embed, can_reroll = result
+
+                # Zachowaj oryginalny embed
+                original_embed = message.embeds[0]
+
+                # pobieranie opisu nowego embeda
+                new_embed = embed.copy()
+                additional_description = new_embed.description
+
+                # Dodaj dodatkowy opis na końcu opisu oryginalnego embeda
+                original_embed.description += f"\n\n**Wyniki po przerzucie**\n{additional_description}"
+
+                # Zaktualizuj wiadomość z wynikiem przerzutu
+                await message.edit(embed=original_embed)
+
+                # Usuń reakcję po przerzucie
+                await reaction.message.clear_reactions()

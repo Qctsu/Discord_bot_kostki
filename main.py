@@ -9,7 +9,7 @@ import nextcord
 from nextcord.ext import commands
 from nextcord import Embed
 from Systems.two_d_twenty import roll_k6, roll_k20, handle_reaction_add  # Importowanie funkcji
-from Systems.SWAE import damage, test  # Importowanie funkcji
+from Systems.SWAE import damage, test, handle_reaction_add2  # Importowanie funkcji
 
 # Wczytywanie zmiennych środowiskowych z pliku .env
 load_dotenv()
@@ -27,6 +27,7 @@ intents.messages = True
 # Inicjalizacja bota
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+user_last_commands = {} # zmienne do przerzutu
 
 # Obsługa zdarzenia on_ready
 @bot.event
@@ -159,10 +160,20 @@ async def on_message(message):
             damage_match = re.match(r'!damage (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-])\d+)?', message.content)
 
             if test_match:
-                embed = await test(message.content, message.author.display_name)
-                if embed:  # Jeśli embed nie jest None, wysyłamy go
-                    await message.channel.send(embed=embed)
+                user_id = message.author.display_name
+                command = message.content
 
+                result = await test(message.content, message.author.display_name)
+                if result:  # Jeśli wynik nie jest None, przetwarzamy go
+                    embed, can_reroll = result  # Rozpakowujemy krotkę
+                    msg = await message.channel.send(embed=embed)  # Wysyłamy embed
+
+                    message_id = msg.id
+                    add_user_command(message_id, user_id, command)
+
+                    if can_reroll:  # Jeśli can_reroll jest True, dodajemy reakcję
+                        await msg.add_reaction('🔄')
+                    await msg.add_reaction('❌')  # Dodajemy reakcję anulowania przerzutów
             elif damage_match:
                 embed = await damage(message.content, message.author.display_name)
                 if embed:
@@ -174,13 +185,13 @@ async def on_message(message):
     # on_message, aby komendy działały poprawnie
     await bot.process_commands(message)
 
-
 # Obsługa zdarzenia on_reaction_add
 @bot.event
 async def on_reaction_add(reaction, user):
     if user == bot.user:
         return
-    await handle_reaction_add(reaction, user, bot)
+    # await handle_reaction_add(reaction, user, bot)
+    await handle_reaction_add2(reaction, user, bot, user_last_commands)
 
 
 # obsługa błędów
@@ -189,6 +200,9 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         return
     raise error
+
+def add_user_command(message_id, user_id, command):
+    user_last_commands[message_id] = {"user_id": user_id, "command": command}
 
 
 # Uruchamianie bota
