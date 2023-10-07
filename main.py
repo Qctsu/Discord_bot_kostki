@@ -52,16 +52,23 @@ async def two_d_twenty(ctx, duration: int):
     embed.add_field(name="!k6",
                     value="**Użycie**: !Xk6\n"
                           "- X - liczba rzutów kostką (np. !3k6 dla 3 rzutów)\n"
-                          "Rzut jedną lub więcej kostkami k6, gdzie '1' to 1 punkt, '2' to 2 punkty, '3' i '4' to 0 punktów, a '5' i '6' to 1 punkt oraz Efekt.\n"
-                          "\n**Przykład**: `!3k6` (3 rzuty k6)",
+                          "Rzut jedną lub więcej kostkami k6, gdzie:\n"
+                          "'1' to 1 punkt, \n"
+                          "'2' to 2 punkty, \n"
+                          "'3' i '4' to 0 punktów, \n"
+                          "'5' i '6' to 1 punkt oraz Efekt.\n\n"
+                          "**Przykład**: `!3k6` (3 rzuty k6)",
                     inline=False)
 
     embed.add_field(name="!k20",
                     value="**Użycie**: !Xk20;Y\n"
                           "- X - liczba rzutów kostką (np. !3k20 dla 3 rzutów)\n"
                           "- Y - próg sukcesu\n"
-                          "Rzut jedną lub więcej kostkami k20, gdzie każdy wynik równy lub niższy Y jest sukcesem. '1' to krytyczny sukces (2 sukcesy), '20' to komplikacja (porażka).\n"
-                          "\n**Przykład**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)",
+                          "Rzut jedną lub więcej kostkami k20, gdzie: \n"
+                          "każdy wynik równy lub niższy Y jest sukcesem. \n"
+                          "'1' to krytyczny sukces (2 sukcesy), \n"
+                          "'20' to komplikacja (porażka).\n\n"
+                          "**Przykład**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)",
                     inline=False)
 
     await ctx.send(embed=embed)
@@ -79,20 +86,20 @@ async def swae(ctx, duration: int):
     )
 
     # Dodawanie pól z opisem komend
-    embed.add_field(name="!test", value="**Użycie**: !test [X]kY[+Z/-Z]\n"
-                                        "- [X] - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
+    embed.add_field(name="!test", value="**Użycie**: !test XkY(+Z/-Z)\n"
+                                        "- X - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
                                         "- Y - Typ kostki (np. 6 dla k6, 10 dla k10, itp.)\n"
-                                        "- [+Z/-Z] - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
-                                        "Rzuty kostką typu Y. Jeśli [X] = 1, dodatkowo rzuca kością figury (k6) i zwraca lepszy wynik.\n"
+                                        "- (+Z/-Z) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
+                                        "Rzuty kostką typu Y. Jeśli X = 1, dodatkowo rzuca kością figury (k6) i zwraca lepszy wynik.\n"
                                         "\n**Przykład**: `!test k8+2` (1 rzut k8 plus modyfikator +2)",
                     inline=False)
 
-    embed.add_field(name="!damage", value="**Użycie**: !damage Y[;Z][+A/-A]\n"
+    embed.add_field(name="!damage", value="**Użycie**: !damage kY;Z(+A/-A)\n"
                                           "- Y - Typ pierwszej kostki (np. 6 dla k6, 12 dla k12, itp.)\n"
-                                          "- [;Z] - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
-                                          "- [+A/-A] - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
+                                          "- Z - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
+                                          "- (+A/-A) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
                                           "Rzuty kostkami określonymi przez Y oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
-                                          "\n**Przykład**: `!damage 12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)",
+                                          "\n**Przykład**: `!damage k12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)",
                     inline=False)
 
     await ctx.send(embed=embed)
