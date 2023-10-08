@@ -1,5 +1,3 @@
-# https://discord.com/api/oauth2/authorize?client_id=1158433425569624074&permissions=11264&scope=bot
-
 # Importowanie niezbędnych modułów
 import datetime
 import os
@@ -8,8 +6,8 @@ from dotenv import load_dotenv
 import nextcord
 from nextcord.ext import commands
 from nextcord import Embed
-from Systems.two_d_twenty import roll_k6, roll_k20, handle_reaction_add  # Importowanie funkcji
-from Systems.SWAE import damage, test, handle_reaction_add2  # Importowanie funkcji
+from Systems.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20  # Importowanie funkcji
+from Systems.SWAE import damage, test, handle_reaction_add_SWAE  # Importowanie funkcji
 
 # Wczytywanie zmiennych środowiskowych z pliku .env
 load_dotenv()
@@ -32,78 +30,100 @@ user_last_commands = {} # zmienne do przerzutu
 # Obsługa zdarzenia on_ready
 @bot.event
 async def on_ready():
+    bot.load_extension('Systems.Systems')
     print(f'Zalogowano jako {bot.user}')
+    print(f'Pakiet systemów załadowany')
 
 
 # Komenda "!2d20 x" na aktywację systemu 2d20 gdzie x to ilość godzin aktywacji systemu
-@bot.command(name='2d20')
-async def two_d_twenty(ctx, duration: int):
-    """Aktywuje System 2d20 na określoną liczbę godzin."""
-    end_time = datetime.datetime.utcnow() + datetime.timedelta(hours=duration)
-    active_systems[ctx.channel.id] = {'system': '2d20', 'end_time': end_time}
-
-    # Tworzenie i wysyłanie embeda
-    embed = Embed(
-        title="System 2d20 aktywny",
-        description=f"System **2d20** został aktywowany na kanale **{ctx.channel.name}** na **{duration} godzin(y)**.",
-        color=0x3498db  # Kolor embeda
-    )
-
-    # Dodawanie pól z opisem komend
-    embed.add_field(name="!k6",
-                    value="**Użycie**: !Xk6\n"
-                          "- X - liczba rzutów kostką (np. !3k6 dla 3 rzutów)\n"
-                          "Rzut jedną lub więcej kostkami k6, gdzie:\n"
-                          "'1' to 1 punkt, \n"
-                          "'2' to 2 punkty, \n"
-                          "'3' i '4' to 0 punktów, \n"
-                          "'5' i '6' to 1 punkt oraz Efekt.\n\n"
-                          "**Przykład**: `!3k6` (3 rzuty k6)",
-                    inline=False)
-
-    embed.add_field(name="!k20",
-                    value="**Użycie**: !Xk20;Y\n"
-                          "- X - liczba rzutów kostką (np. !3k20 dla 3 rzutów)\n"
-                          "- Y - próg sukcesu\n"
-                          "Rzut jedną lub więcej kostkami k20, gdzie: \n"
-                          "każdy wynik równy lub niższy Y jest sukcesem. \n"
-                          "'1' to krytyczny sukces (2 sukcesy), \n"
-                          "'20' to komplikacja (porażka).\n\n"
-                          "**Przykład**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)",
-                    inline=False)
-
-    await ctx.send(embed=embed)
-
-@bot.command(name='SWAE')
-async def swae(ctx, duration: int):
-    """Aktywuje System SWAE na określoną liczbę godzin."""
-    end_time = datetime.datetime.utcnow() + datetime.timedelta(hours=duration)
-    active_systems[ctx.channel.id] = {'system': 'SWAE', 'end_time': end_time}
-
-    embed = Embed(
-        title="System SWAE aktywny",
-        description=f"System **SWAE** został aktywowany na kanale **{ctx.channel.name}** na **{duration} godzin(y)**.",
-        color=0x3498db  # Kolor embeda
-    )
-
-    # Dodawanie pól z opisem komend
-    embed.add_field(name="!test", value="**Użycie**: !test XkY(+Z/-Z)\n"
-                                        "- X - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
-                                        "- Y - Typ kostki (np. 6 dla k6, 10 dla k10, itp.)\n"
-                                        "- (+Z/-Z) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
-                                        "Rzuty kostką typu Y. Jeśli X = 1, dodatkowo rzuca kością figury (k6) i zwraca lepszy wynik.\n"
-                                        "\n**Przykład**: `!test k8+2` (1 rzut k8 plus modyfikator +2)",
-                    inline=False)
-
-    embed.add_field(name="!damage", value="**Użycie**: !damage kY;Z(+A/-A)\n"
-                                          "- Y - Typ pierwszej kostki (np. 6 dla k6, 12 dla k12, itp.)\n"
-                                          "- Z - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
-                                          "- (+A/-A) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
-                                          "Rzuty kostkami określonymi przez Y oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
-                                          "\n**Przykład**: `!damage k12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)",
-                    inline=False)
-
-    await ctx.send(embed=embed)
+# @bot.command(name='2d20')
+# async def two_d_twenty(ctx, duration: int):
+#     """Aktywuje System 2d20 na określoną liczbę godzin."""
+#     # Sprawdź, czy jakikolwiek system jest już aktywny na tym kanale
+#     if ctx.channel.id in active_systems:
+#         # Jeśli tak, powiadom użytkownika i przerwij funkcję
+#         embed = Embed(
+#             title="Błąd",
+#             description=f"System **{active_systems[ctx.channel.id]['system']}** jest już aktywny na tym kanale. Czy na pewno chcesz go dezaktywować?",
+#             color=0xe74c3c  # Czerwony kolor embeda
+#         )
+#         await ctx.send(embed=embed)
+#         return
+#     end_time = datetime.datetime.utcnow() + datetime.timedelta(hours=duration)
+#     active_systems[ctx.channel.id] = {'system': '2d20', 'end_time': end_time}
+#
+#     # Tworzenie i wysyłanie embeda
+#     embed = Embed(
+#         title="System 2d20 aktywny",
+#         description=f"System **2d20** został aktywowany na kanale **{ctx.channel.name}** na **{duration} godzin(y)**.",
+#         color=0x3498db  # Kolor embeda
+#     )
+#
+#     # Dodawanie pól z opisem komend
+#     embed.add_field(name="!k6",
+#                     value="**Użycie**: !Xk6\n"
+#                           "- X - liczba rzutów kostką (np. !3k6 dla 3 rzutów)\n"
+#                           "Rzut jedną lub więcej kostkami k6, gdzie:\n"
+#                           "'1' to 1 punkt, \n"
+#                           "'2' to 2 punkty, \n"
+#                           "'3' i '4' to 0 punktów, \n"
+#                           "'5' i '6' to 1 punkt oraz Efekt.\n\n"
+#                           "**Przykład**: `!3k6` (3 rzuty k6)",
+#                     inline=False)
+#
+#     embed.add_field(name="!k20",
+#                     value="**Użycie**: !Xk20;Y\n"
+#                           "- X - liczba rzutów kostką (np. !3k20 dla 3 rzutów)\n"
+#                           "- Y - próg sukcesu\n"
+#                           "Rzut jedną lub więcej kostkami k20, gdzie: \n"
+#                           "każdy wynik równy lub niższy Y jest sukcesem. \n"
+#                           "'1' to krytyczny sukces (2 sukcesy), \n"
+#                           "'20' to komplikacja (porażka).\n\n"
+#                           "**Przykład**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)",
+#                     inline=False)
+#
+#     await ctx.send(embed=embed)
+#
+# @bot.command(name='SWAE')
+# async def swae(ctx, duration: int):
+#     """Aktywuje System SWAE na określoną liczbę godzin."""
+#     # Sprawdź, czy jakikolwiek system jest już aktywny na tym kanale
+#     if ctx.channel.id in active_systems:
+#         # Jeśli tak, powiadom użytkownika i przerwij funkcję
+#         embed = Embed(
+#             title="Błąd",
+#             description=f"System **{active_systems[ctx.channel.id]['system']}** jest już aktywny na tym kanale. Czy na pewno chcesz go dezaktywować?",
+#             color=0xe74c3c  # Czerwony kolor embeda
+#         )
+#         await ctx.send(embed=embed)
+#         return
+#     end_time = datetime.datetime.utcnow() + datetime.timedelta(hours=duration)
+#     active_systems[ctx.channel.id] = {'system': 'SWAE', 'end_time': end_time}
+#
+#     embed = Embed(
+#         title="System SWAE aktywny",
+#         description=f"System **SWAE** został aktywowany na kanale **{ctx.channel.name}** na **{duration} godzin(y)**.",
+#         color=0x3498db  # Kolor embeda
+#     )
+#
+#     # Dodawanie pól z opisem komend
+#     embed.add_field(name="!test", value="**Użycie**: !test XkY(+Z/-Z)\n"
+#                                         "- X - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
+#                                         "- Y - Typ kostki (np. 6 dla k6, 10 dla k10, itp.)\n"
+#                                         "- (+Z/-Z) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
+#                                         "Rzuty kostką typu Y. Jeśli X = 1, dodatkowo rzuca kością figury (k6) i zwraca lepszy wynik.\n"
+#                                         "\n**Przykład**: `!test k8+2` (1 rzut k8 plus modyfikator +2)",
+#                     inline=False)
+#
+#     embed.add_field(name="!damage", value="**Użycie**: !damage kY;Z(+A/-A)\n"
+#                                           "- Y - Typ pierwszej kostki (np. 6 dla k6, 12 dla k12, itp.)\n"
+#                                           "- Z - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
+#                                           "- (+A/-A) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
+#                                           "Rzuty kostkami określonymi przez Y oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
+#                                           "\n**Przykład**: `!damage k12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)",
+#                     inline=False)
+#
+#     await ctx.send(embed=embed)
 
 
 # Komenda !clearsystems do czyszczenia aktywności wszystkich systemów
@@ -190,8 +210,27 @@ async def on_message(message):
 async def on_reaction_add(reaction, user):
     if user == bot.user:
         return
-    # await handle_reaction_add(reaction, user, bot)
-    await handle_reaction_add2(reaction, user, bot, user_last_commands)
+
+    # Pobieranie ID kanału, na którym dodano reakcję
+    channel_id = reaction.message.channel.id
+
+    # Sprawdzanie, czy kanał jest w słowniku active_systems
+    if channel_id in active_systems:
+        system_info = active_systems[channel_id]
+
+        # Sprawdzanie, czy czas aktywności systemu nie upłynął
+        if system_info['end_time'] > datetime.datetime.utcnow():
+
+            # Wywołanie odpowiedniej funkcji w zależności od aktywnego systemu
+            if system_info['system'] == '2d20':
+                await handle_reaction_add_2d20(reaction, user, bot)
+
+            elif system_info['system'] == 'SWAE':
+                await handle_reaction_add_SWAE(reaction, user, bot, user_last_commands)
+
+        # Jeśli czas aktywności systemu upłynął, usuwamy wpis ze słownika
+        else:
+            del active_systems[channel_id]
 
 
 # obsługa błędów

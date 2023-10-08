@@ -108,7 +108,7 @@ async def damage(message_content, display_name):
     return embed
 
 
-async def handle_reaction_add2(reaction, user, bot, user_last_commands):
+async def handle_reaction_add_SWAE(reaction, user, bot, user_last_commands):
     if user == bot.user:
         return
 

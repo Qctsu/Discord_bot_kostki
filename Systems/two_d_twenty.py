@@ -105,7 +105,7 @@ def roll_k20(message_content, display_name):
 
 
 # Obsługa reakcji na wiadomość
-async def handle_reaction_add(reaction, user, bot):
+async def handle_reaction_add_2d20(reaction, user, bot):
     if user == bot.user:
         return
 
