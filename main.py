@@ -1,6 +1,7 @@
 # Importowanie niezbędnych modułów
 import DataBase.tables_creation as DB_kostki
-from DataBase.active_systems import get_active_system, remove_active_system, deactivate_expired_systems
+from DataBase.active_systems import get_active_system, remove_active_system, deactivate_expired_systems, \
+    clear_active_systems
 import datetime
 import os
 import re
@@ -33,7 +34,7 @@ async def check_and_deactivate_systems():
     while True:
         print("Sprawdzam i deaktywuje wygasłe systemy...")
         await deactivate_expired_systems()
-        await asyncio.sleep(60 * 30)  # Sleep for 30 minutes
+        await asyncio.sleep(60 * 30)  # Spanko na 30 minut
 
 async def async_deactivate_expired_systems():
     loop = asyncio.get_running_loop()
@@ -62,7 +63,7 @@ async def on_ready():
 async def clearsystems(ctx):
     """Czyści wszystkie aktywne systemy."""
     # Czyszczenie wszystkich aktywnych systemów w bazie danych
-    DB_kostki.clear_active_systems()
+    await clear_active_systems()  # WYWOŁANIE NOWEJ FUNKCJI
     # Tworzenie i wysyłanie embeda
     embed = Embed(
         title="Systemy dezaktywowane",

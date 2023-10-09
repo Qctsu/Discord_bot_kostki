@@ -62,15 +62,20 @@ async def get_active_system(channel_id):
 
 # Funkcja do dezaktywacji przeterminowanych systemów
 async def deactivate_expired_systems():
-    try:
-        async with aiosqlite.connect('DataBase/discord_bot_kostki.db') as db:
-            cursor = await db.cursor()
-            sql = '''
-                DELETE FROM active_systems WHERE end_time < CURRENT_TIMESTAMP
-            '''
-            await cursor.execute(sql)
-            deleted_rows = cursor.rowcount
-            await db.commit()
-            print(f"Deleted {deleted_rows} expired systems with SQL: {sql}")
-    except Exception as e:
-        print(f"Error: {e}")
+    async with aiosqlite.connect('DataBase/discord_bot_kostki.db') as db:
+        cursor = await db.cursor()
+        sql = '''
+            DELETE FROM active_systems WHERE end_time < CURRENT_TIMESTAMP
+        '''
+        await cursor.execute(sql)
+        await db.commit()
+
+#Czyszczenie wszystkich systemów
+async def clear_active_systems():
+    async with aiosqlite.connect('DataBase/discord_bot_kostki.db') as db:
+        cursor = await db.cursor()
+
+        # Usuwanie wszystkich rekordów z tabeli active_systems
+        await cursor.execute('DELETE FROM active_systems')
+
+        await db.commit()

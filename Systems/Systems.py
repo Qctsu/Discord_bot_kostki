@@ -4,11 +4,13 @@ from nextcord import Embed
 import asyncio
 from DataBase.active_systems import add_active_system, remove_active_system, get_active_system
 
+
 class Systems(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def activate_system(self, ctx, system_name: str, duration_hours: int, embed_description: str, embed_fields: dict):
+    async def activate_system(self, ctx, system_name: str, duration_hours: int, embed_description: str,
+                              embed_fields: dict):
 
         # Przelicz czas z godzin na minuty
         duration_minutes = duration_hours * 60
@@ -29,6 +31,7 @@ class Systems(commands.Cog):
 
             def check(reaction, user):
                 return user == ctx.author and str(reaction.emoji) in ["✅", "❌"] and reaction.message.id == message.id
+
             try:
                 reaction, user = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
             except asyncio.TimeoutError:  # Jeśli czas minął, usuń wiadomość i przerwij funkcję
@@ -49,7 +52,8 @@ class Systems(commands.Cog):
         formatted_activation_time = current_time.replace(microsecond=0).isoformat(' ')
         formatted_end_time = end_time.replace(microsecond=0).isoformat(' ')
 
-        await add_active_system(ctx.channel.id, system_name, duration_hours, formatted_activation_time, formatted_end_time)
+        await add_active_system(ctx.channel.id, system_name, duration_hours, formatted_activation_time,
+                                formatted_end_time)
 
         embed = Embed(
             title=f"System {system_name} aktywny",
@@ -66,22 +70,28 @@ class Systems(commands.Cog):
     async def two_d_twenty(self, ctx, duration: int):
         description = f"System **2d20** został aktywowany na kanale **{ctx.channel.name}** na **{duration} godzin(y)**."
         fields = {
-            "!k6": ("**Użycie**: !Xk6\n"
-                    "- X - liczba rzutów kostką (np. !3k6 dla 3 rzutów)\n"
-                    "Rzut jedną lub więcej kostkami k6, gdzie:\n"
-                    "'1' to 1 punkt, \n"
-                    "'2' to 2 punkty, \n"
-                    "'3' i '4' to 0 punktów, \n"
-                    "'5' i '6' to 1 punkt oraz Efekt.\n\n"
-                    "**Przykład**: `!3k6` (3 rzuty k6)"),
-            "!k20": ("**Użycie**: !Xk20;Y\n"
-                     "- X - liczba rzutów kostką (np. !3k20 dla 3 rzutów)\n"
-                     "- Y - próg sukcesu\n"
-                     "Rzut jedną lub więcej kostkami k20, gdzie: \n"
-                     "każdy wynik równy lub niższy Y jest sukcesem. \n"
-                     "'1' to krytyczny sukces (2 sukcesy), \n"
-                     "'20' to komplikacja (porażka).\n\n"
-                     "**Przykład**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)")
+            "!k6": (
+                "**Użycie**: !Xk6\n"
+                "- X - liczba rzutów kostką (np. !3k6 dla 3 rzutów)\n"
+                "Rzut jedną lub więcej kostkami k6, gdzie:\n"
+                "'1' to 1 punkt, \n"
+                "'2' to 2 punkty, \n"
+                "'3' i '4' to 0 punktów, \n"
+                "'5' i '6' to 1 punkt oraz Efekt.\n"
+                "**Przykład**: `!3k6` (3 rzuty k6)\n\n"
+            ),
+            "!k20": (
+                "**Użycie**: !Xk20;Y\n"
+                "- X - liczba rzutów kostką (np. !3k20 dla 3 rzutów)\n"
+                "- Y - próg sukcesu\n"
+                "Rzut jedną lub więcej kostkami k20, gdzie: \n"
+                "każdy wynik równy lub niższy Y jest sukcesem. \n"
+                "'1' to krytyczny sukces (2 sukcesy), \n"
+                "'20' to komplikacja (porażka).\n"
+                "**Przykład**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)\n\n"
+                "Wsparcie merytoryczne: **piotrek_jay**\n"
+                "Błędy w działaniu proszę zgłaszać do: **kucu**"
+            )
         }
         await self.activate_system(ctx, '2d20', duration, description, fields)
 
@@ -89,20 +99,28 @@ class Systems(commands.Cog):
     async def swae(self, ctx, duration: int):
         description = f"System **SWAE** został aktywowany na kanale **{ctx.channel.name}** na **{duration} godzin(y)**."
         fields = {
-            "!test": ("**Użycie**: !test XkY(+Z/-Z)\n"
-                      "- X - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
-                      "- Y - Typ kostki (np. 6 dla k6, 10 dla k10, itp.)\n"
-                      "- (+Z/-Z) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
-                      "Rzuty kostką typu Y. Jeśli X = 1, dodatkowo rzuca kością figury (k6) i zwraca lepszy wynik.\n"
-                      "\n**Przykład**: `!test k8+2` (1 rzut k8 plus modyfikator +2)"),
-            "!damage": ("**Użycie**: !damage kY;Z(+A/-A)\n"
-                        "- Y - Typ pierwszej kostki (np. 6 dla k6, 12 dla k12, itp.)\n"
-                        "- Z - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
-                        "- (+A/-A) - Opcjonalny modyfikator, który zostanie dodany/odejmuje wyniku\n"
-                        "Rzuty kostkami określonymi przez Y oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
-                        "\n**Przykład**: `!damage k12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)")
+            "!test": (
+                "**Użycie**: !test XkY(+Z/-Z)\n"
+                "- X - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
+                "- Y - Typ kostki (np. 6 dla k6, 10 dla k10, itp.)\n"
+                "- (+Z/-Z) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
+                "Rzuty kostką typu Y. Jeśli X = 1, dodatkowo rzuca kością figury (k6) i zwraca lepszy wynik.\n"
+                "W teście mamy możliwość przerzutu używając reakcji 🔄 w odpowiedzi na rzut.\n"
+                "**Przykład**: `!test k8+2` (1 rzut k8 plus modyfikator +2)\n\n"
+            ),
+            "!damage": (
+                "**Użycie**: !damage kY;Z(+A/-A)\n"
+                "- Y - Typ pierwszej kostki (np. 6 dla k6, 12 dla k12, itp.)\n"
+                "- Z - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
+                "- (+A/-A) - Opcjonalny modyfikator, który zostanie dodany/odejmuje wyniku\n"
+                "Rzuty kostkami określonymi przez Y oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
+                "**Przykład**: `!damage k12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)\n\n"
+                "Wsparcie merytoryczne: **piotrek_jay**\n"
+                "Błędy w działaniu proszę zgłaszać do: **kucu**"
+            )
         }
         await self.activate_system(ctx, 'SWAE', duration, description, fields)
+
 
 def setup(bot):
     bot.add_cog(Systems(bot))

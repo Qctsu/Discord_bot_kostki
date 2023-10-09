@@ -14,23 +14,31 @@ async def test(message_content, display_name):
     dice_type = int(test_match.groups()[1])
     modifier = int(test_match.groups()[2]) if test_match.groups()[2] else 0
 
-    total_roll = 0
     all_rolls = []
     for _ in range(num_dice):
-        roll = random.randint(1, dice_type)
-        while roll == dice_type:
-            roll += random.randint(1, dice_type)
-        roll += modifier
-        total_roll += roll
-        all_rolls.append(roll)
+        roll = 0  # Resetujemy wartość roll przy każdej nowej kostce
+        current_roll = random.randint(1, dice_type)  # Pierwszy rzut kostką
+        explosions = 0  # Resetujemy licznik eksplozji
+
+        while current_roll == dice_type and explosions < 10:  # Sprawdzamy eksplozje
+            roll += current_roll  # Dodajemy aktualny rzut do sumy
+            current_roll = random.randint(1, dice_type)  # Rzucamy jeszcze raz
+            explosions += 1  # Zwiększamy licznik eksplozji
+
+        roll += current_roll + modifier  # Dodajemy ostatni rzut i modyfikator do sumy
+        all_rolls.append(roll)  # Dodajemy sumę do listy
 
     wild_roll = random.randint(1, 6)
-    while wild_roll == 6:
+    explosions = 0
+
+    while wild_roll == 6 and explosions < 10:
         wild_roll += random.randint(1, 6)
+        explosions += 1
+
     wild_roll += modifier
 
-    highest_dice_roll = max(max(all_rolls), wild_roll)
-    higher_roll = max(total_roll, wild_roll)
+    highest_dice_roll = max(all_rolls)
+    highest_roll = max(highest_dice_roll, wild_roll)
 
     outcome = ""
     can_reroll = True
@@ -38,19 +46,26 @@ async def test(message_content, display_name):
     if any(roll == 1 for roll in all_rolls) and wild_roll == 1:
         outcome = "Krytyczny pech"
         can_reroll = False
-    elif higher_roll < 4:
+    elif highest_roll < 4:
         outcome = "Porażka"
-    elif 4 <= higher_roll < 8:
+    elif 4 <= highest_roll < 8:
         outcome = "Sukces"
-    elif higher_roll >= 8:
+    elif highest_roll >= 8:
         outcome = "Przebicie"
 
+    if modifier>0:
+        title = f"{display_name} wykonuje test kością k{dice_type} z modyfikatorem +{modifier}"
+    elif modifier!=0:
+        title = f"{display_name} wykonuje test kością k{dice_type} z modyfikatorem {modifier}"
+    else:
+        title = f"{display_name} wykonuje test kością k{dice_type}"
+
     embed = Embed(
-        title=f"{display_name} wykonuje test kością k{dice_type}",
+        title=title,
         description=(
             f"Wyniki Kostek: {', '.join([str(roll) for roll in all_rolls])}\n"
             f"Wynik Kości Figury: {wild_roll}\n\n"
-            f"Najwyższy rzut: **{highest_dice_roll}**\n"
+            f"Najwyższy rzut: **{highest_roll}**\n"
             f"Wynik: **{outcome}**"
         ),
         color=0x3498db
@@ -67,33 +82,58 @@ async def damage(message_content, display_name):
     if damage_match is None:
         return None
 
-    # Grupy dopasowania
-    dice_values = re.findall(r'\d+', damage_match.group(0))  # Znajduje wszystkie wartości rzutów kostką
-    modifier = damage_match.groups()[-1] if damage_match.groups()[-1] is not None else "+0"  # Znajduje modyfikator
+    # Wyszukuje dopasowania
+    damage_match = re.search(r'(\d+(?:;\d+)*)([-+]\d+)?$', damage_match.group(0))
 
-    # Dzieli modyfikator na znak i wartość
-    modifier_sign = "+" if modifier[0] == '+' else "-"
-    modifier_value = int(modifier[1:]) if len(modifier) > 1 else 0
+    if damage_match:
+        # Grupy dopasowania
+        dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(1))]  # Znajduje wszystkie wartości rzutów kostką
+        modifier = damage_match.group(2) if damage_match.group(2) is not None else "+0"  # Znajduje modyfikator
 
-    rolls = []
+        # Dzieli modyfikator na znak i wartość
+        modifier_sign = "+" if modifier[0] == '+' else "-"
+        modifier_value = int(modifier[1:]) if len(modifier) > 1 else 0
 
-    # Dla każdej wartości kostki wykonuje rzut i dodaje do listy rzutów
+        rolls = []
+        all_rolls = []
+
     for dice in dice_values:
-        dice_type = int(dice)
-        roll = random.randint(1, dice_type)
-        rolls.append(roll)
+        print(f"kostka którą rzucamy: {dice}")
+        roll =0 # Resetujemy wartość roll przy każdej nowej kostce
+        current_roll = random.randint(1, int(dice)) # pierwszy rzut kością
+        explosions = 0 #resetujemy eksplozje
+        print(f"Rzut kością: {current_roll}")
+
+        while current_roll == dice and explosions < 10: # Sprawdzamy eksplozje
+            print(f"Eksplozja!")
+            roll += current_roll # Dodajemy aktualny rzut do sumy
+            print(F"Wartość roll: {roll}")
+            current_roll = random.randint(1, int(dice))  # Rzucamy jeszcze raz
+            print(f"Rzut kością po eksplozji: {current_roll}")
+            explosions += 1  # Zwiększamy licznik eksplozji
+
+        roll += current_roll  # Dodajemy ostatni rzut i modyfikator do sumy
+        all_rolls.append(roll)  # Dodajemy sumę do listy
 
     # Oblicza całkowite obrażenia
-    total_damage = sum(rolls)
+    total_damage = sum(all_rolls)
     # Dodanie lub odjęcie wartości modyfikatora
     if modifier_sign == '+':
         total_damage += modifier_value
     elif modifier_sign == '-':
         total_damage -= modifier_value
+    print(f"-------------")
 
     # Tworzenie tytułu zawierającego informacje o rodzaju kostek i modyfikatorze
-    dice_types = [f"k{dice}" for dice in dice_values[:-1]]  # Wyklucz ostatni element (modyfikator)
-    title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)} z modyfikatorem {modifier_sign}{modifier_value}"
+    dice_types = [f"k{dice}" for dice in dice_values]
+    if modifier_value>0:
+        title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)} z modyfikatorem {modifier_sign}{modifier_value}"
+    else:
+        title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)}"
+
+    # Print each roll result
+    for i, roll in enumerate(rolls):
+        print(f"Rzut {i + 1}: {roll}")
 
     # Usuwanie niepotrzebnego 'k' przed liczbami kostek
     title = re.sub(r'k0*(\d+)', r'k\1', title)
