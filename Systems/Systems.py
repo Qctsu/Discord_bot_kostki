@@ -1,27 +1,55 @@
 import datetime
 from nextcord.ext import commands
 from nextcord import Embed
+import asyncio
+from DataBase.active_systems import add_active_system, remove_active_system, get_active_system
 
 class Systems(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Zastąp poniższe `active_systems` Twoim mechanizmem śledzenia aktywnych systemów
-        self.active_systems = {}
 
-    async def activate_system(self, ctx, system_name: str, duration: int, embed_description: str, embed_fields: dict):
+    async def activate_system(self, ctx, system_name: str, duration_hours: int, embed_description: str, embed_fields: dict):
+
+        # Przelicz czas z godzin na minuty
+        duration_minutes = duration_hours * 60
+
         # Sprawdź, czy jakikolwiek system jest już aktywny na tym kanale
-        if ctx.channel.id in self.active_systems:
-            # Jeśli tak, powiadom użytkownika i przerwij funkcję
+        existing_system = await get_active_system(ctx.channel.id)
+
+        if existing_system:
+            # Jeśli istnieje, powiadom użytkownika i przerwij funkcję
             embed = Embed(
                 title="Błąd",
-                description=f"System **{self.active_systems[ctx.channel.id]['system']}** jest już aktywny na tym kanale. Czy na pewno chcesz go dezaktywować?",
+                description=f"System **{existing_system['system_name']}** jest już aktywny na tym kanale. Czy na pewno chcesz go dezaktywować?",
                 color=0xe74c3c  # Czerwony kolor embeda
             )
-            await ctx.send(embed=embed)
-            return
+            message = await ctx.send(embed=embed)
+            await message.add_reaction("✅")  # Reakcja "check"
+            await message.add_reaction("❌")  # Reakcja "x"
 
-        end_time = datetime.datetime.utcnow() + datetime.timedelta(hours=duration)
-        self.active_systems[ctx.channel.id] = {'system': system_name, 'end_time': end_time}
+            def check(reaction, user):
+                return user == ctx.author and str(reaction.emoji) in ["✅", "❌"] and reaction.message.id == message.id
+            try:
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
+            except asyncio.TimeoutError:  # Jeśli czas minął, usuń wiadomość i przerwij funkcję
+                await message.delete()
+                return
+            else:
+                if str(reaction.emoji) == "✅":
+                    await remove_active_system(ctx.channel.id)  # Usuń stary system
+                elif str(reaction.emoji) == "❌":
+                    await message.delete()
+                    return
+            # Usuń wiadomość
+            await message.delete()
+
+        current_time = datetime.datetime.utcnow()
+        end_time = current_time + datetime.timedelta(hours=duration_hours)
+
+        formatted_activation_time = current_time.replace(microsecond=0).isoformat(' ')
+        formatted_end_time = end_time.replace(microsecond=0).isoformat(' ')
+
+        await add_active_system(ctx.channel.id, system_name, duration_hours, formatted_activation_time, formatted_end_time)
 
         embed = Embed(
             title=f"System {system_name} aktywny",
@@ -70,7 +98,7 @@ class Systems(commands.Cog):
             "!damage": ("**Użycie**: !damage kY;Z(+A/-A)\n"
                         "- Y - Typ pierwszej kostki (np. 6 dla k6, 12 dla k12, itp.)\n"
                         "- Z - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
-                        "- (+A/-A) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
+                        "- (+A/-A) - Opcjonalny modyfikator, który zostanie dodany/odejmuje wyniku\n"
                         "Rzuty kostkami określonymi przez Y oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
                         "\n**Przykład**: `!damage k12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)")
         }

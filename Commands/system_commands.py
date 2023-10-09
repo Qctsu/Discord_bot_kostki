@@ -1,6 +1,5 @@
 from nextcord.ext import commands
 import datetime
-import re
 from nextcord import Embed
 
 class SystemCommands(commands.Cog):
