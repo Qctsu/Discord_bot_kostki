@@ -53,12 +53,12 @@ async def test(message_content, display_name):
     elif highest_roll >= 8:
         outcome = "Przebicie"
 
-    if modifier>0:
-        title = f"{display_name} wykonuje test kością k{dice_type} z modyfikatorem +{modifier}"
-    elif modifier!=0:
-        title = f"{display_name} wykonuje test kością k{dice_type} z modyfikatorem {modifier}"
+    if modifier > 0:
+        title = f"{display_name} wykonuje test kością {num_dice}k{dice_type} z modyfikatorem +{modifier}"
+    elif modifier != 0:
+        title = f"{display_name} wykonuje test kością {num_dice}k{dice_type} z modyfikatorem {modifier}"
     else:
-        title = f"{display_name} wykonuje test kością k{dice_type}"
+        title = f"{display_name} wykonuje test kością {num_dice}k{dice_type}"
 
     embed = Embed(
         title=title,
@@ -75,19 +75,26 @@ async def test(message_content, display_name):
 
 
 async def damage(message_content, display_name):
+    damage_match = None
+    damage_match_2 = None
     # Wzorzec do dopasowania komendy !damage
-    damage_match = re.match(r'!damage (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-]\d+))?', message_content)
+    if ';' in message_content:
+        damage_match = re.match(r'!damage (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-]\d+))?', message_content)
+    elif ';' not in message_content:
+        damage_match_2 = re.match(r'!damage (\d*)k(\d+)([+\-]\d+)?', message_content)
 
     # Jeśli wzorzec nie pasuje, zwracamy None
-    if damage_match is None:
+    if damage_match is None and damage_match_2 is None:
         return None
 
     # Wyszukuje dopasowania
-    damage_match = re.search(r'(\d+(?:;\d+)*)([-+]\d+)?$', damage_match.group(0))
+    # damage_match = re.search(r'(\d+(?:;\d+)*)([-+]\d+)?$', damage_match.group(0))
 
     if damage_match:
+        print(f"pattern 1")
         # Grupy dopasowania
-        dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(1))]  # Znajduje wszystkie wartości rzutów kostką
+        dice_values = [int(value) for value in
+                       re.findall(r'\d+', damage_match.group(1))]  # Znajduje wszystkie wartości rzutów kostką
         modifier = damage_match.group(2) if damage_match.group(2) is not None else "+0"  # Znajduje modyfikator
 
         # Dzieli modyfikator na znak i wartość
@@ -97,53 +104,89 @@ async def damage(message_content, display_name):
         rolls = []
         all_rolls = []
 
-    for dice in dice_values:
-        print(f"kostka którą rzucamy: {dice}")
-        roll =0 # Resetujemy wartość roll przy każdej nowej kostce
-        current_roll = random.randint(1, int(dice)) # pierwszy rzut kością
-        explosions = 0 #resetujemy eksplozje
-        print(f"Rzut kością: {current_roll}")
+        for dice in dice_values:
+            print(f"kostka którą rzucamy: {dice}")
+            roll = 0  # Resetujemy wartość roll przy każdej nowej kostce
+            current_roll = random.randint(1, int(dice))  # pierwszy rzut kością
+            explosions = 0  # resetujemy eksplozje
+            print(f"Rzut kością: {current_roll}")
 
-        while current_roll == dice and explosions < 10: # Sprawdzamy eksplozje
-            print(f"Eksplozja!")
-            roll += current_roll # Dodajemy aktualny rzut do sumy
-            print(F"Wartość roll: {roll}")
-            current_roll = random.randint(1, int(dice))  # Rzucamy jeszcze raz
-            print(f"Rzut kością po eksplozji: {current_roll}")
-            explosions += 1  # Zwiększamy licznik eksplozji
+            while current_roll == dice and explosions < 10:  # Sprawdzamy eksplozje
+                print(f"Eksplozja!")
+                roll += current_roll  # Dodajemy aktualny rzut do sumy
+                print(F"Wartość roll: {roll}")
+                current_roll = random.randint(1, int(dice))  # Rzucamy jeszcze raz
+                print(f"Rzut kością po eksplozji: {current_roll}")
+                explosions += 1  # Zwiększamy licznik eksplozji
 
-        roll += current_roll  # Dodajemy ostatni rzut i modyfikator do sumy
-        all_rolls.append(roll)  # Dodajemy sumę do listy
+            roll += current_roll  # Dodajemy ostatni rzut i modyfikator do sumy
+            all_rolls.append(roll)  # Dodajemy sumę do listy
 
-    # Oblicza całkowite obrażenia
-    total_damage = sum(all_rolls)
-    # Dodanie lub odjęcie wartości modyfikatora
-    if modifier_sign == '+':
-        total_damage += modifier_value
-    elif modifier_sign == '-':
-        total_damage -= modifier_value
-    print(f"-------------")
+        # Oblicza całkowite obrażenia
+        total_damage = sum(all_rolls)
+        # Dodanie lub odjęcie wartości modyfikatora
+        if modifier_sign == '+':
+            total_damage += modifier_value
+        elif modifier_sign == '-':
+            total_damage -= modifier_value
+        print(f"-------------")
 
-    # Tworzenie tytułu zawierającego informacje o rodzaju kostek i modyfikatorze
-    dice_types = [f"k{dice}" for dice in dice_values]
-    if modifier_value>0:
-        title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)} z modyfikatorem {modifier_sign}{modifier_value}"
-    else:
-        title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)}"
+        # Tworzenie tytułu zawierającego informacje o rodzaju kostek i modyfikatorze
+        dice_types = [f"k{dice}" for dice in dice_values]
+        if modifier_value > 0:
+            title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)} z modyfikatorem {modifier_sign}{modifier_value}"
+        else:
+            title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)}"
 
-    # Print each roll result
-    for i, roll in enumerate(rolls):
-        print(f"Rzut {i + 1}: {roll}")
+        # Print each roll result
+        for i, roll in enumerate(rolls):
+            print(f"Rzut {i + 1}: {roll}")
 
-    # Usuwanie niepotrzebnego 'k' przed liczbami kostek
-    title = re.sub(r'k0*(\d+)', r'k\1', title)
+        # Usuwanie niepotrzebnego 'k' przed liczbami kostek
+        title = re.sub(r'k0*(\d+)', r'k\1', title)
 
-    # Tworzenie embeda z tytułem i osobnym opisem dla sumy wyników
-    embed = Embed(
-        title=title,
-        description=f"Wynik kostek: {total_damage}",
-        color=0x3498db
-    )
+        # Tworzenie embeda z tytułem i osobnym opisem dla sumy wyników
+        embed = Embed(
+            title=title,
+            description=f"Wynik kostek: {total_damage}",
+            color=0x3498db
+        )
+
+    elif damage_match_2:
+        print(f"pattern 2")
+        num_dice = int(damage_match_2.groups()[0]) if damage_match_2.groups()[0] else 1
+        dice_type = int(damage_match_2.groups()[1])
+        modifier = int(damage_match_2.groups()[2]) if damage_match_2.groups()[2] else 0
+
+        all_rolls = []
+        for _ in range(num_dice):
+            roll = 0  # Resetujemy wartość roll przy każdej nowej kostce
+            current_roll = random.randint(1, dice_type)  # Pierwszy rzut kostką
+            explosions = 0  # Resetujemy licznik eksplozji
+
+            while current_roll == dice_type and explosions < 10:  # Sprawdzamy eksplozje
+                roll += current_roll  # Dodajemy aktualny rzut do sumy
+                current_roll = random.randint(1, dice_type)  # Rzucamy jeszcze raz
+                explosions += 1  # Zwiększamy licznik eksplozji
+
+            roll += current_roll  # Dodajemy ostatni rzut
+            all_rolls.append(roll)  # Dodajemy sumę do listy
+
+        # Oblicza całkowite obrażenia
+        total_damage = sum(all_rolls) + modifier
+
+        if modifier > 0:
+            title = f"{display_name} rzuca obrażenia kością {num_dice}k{dice_type} z modyfikatorem +{modifier}"
+        elif modifier != 0:
+            title = f"{display_name} rzuca obrażenia kością {num_dice}k{dice_type} z modyfikatorem {modifier}"
+        else:
+            title = f"{display_name} rzuca obrażenia kością {num_dice}k{dice_type}"
+
+        embed = Embed(
+            title=title,
+            description=f"Wynik kostek: {total_damage}",
+            color=0x3498db
+        )
 
     return embed
 
