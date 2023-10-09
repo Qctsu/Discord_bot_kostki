@@ -80,6 +80,7 @@ async def damage(message_content, display_name):
     # Wzorzec do dopasowania komendy !damage
     if ';' in message_content:
         damage_match = re.match(r'!damage (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-]\d+))?', message_content)
+        damage_match = re.search(r'(\d+(?:;\d+)*)([-+]\d+)?$', damage_match.group(0))
     elif ';' not in message_content:
         damage_match_2 = re.match(r'!damage (\d*)k(\d+)([+\-]\d+)?', message_content)
 
@@ -93,16 +94,17 @@ async def damage(message_content, display_name):
     if damage_match:
         print(f"pattern 1")
         # Grupy dopasowania
-        dice_values = [int(value) for value in
-                       re.findall(r'\d+', damage_match.group(1))]  # Znajduje wszystkie wartości rzutów kostką
+        dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(1))]  # Znajduje wszystkie wartości rzutów kostką
         modifier = damage_match.group(2) if damage_match.group(2) is not None else "+0"  # Znajduje modyfikator
 
         # Dzieli modyfikator na znak i wartość
         modifier_sign = "+" if modifier[0] == '+' else "-"
         modifier_value = int(modifier[1:]) if len(modifier) > 1 else 0
 
-        rolls = []
         all_rolls = []
+
+        for item in dice_values:
+            print(item)
 
         for dice in dice_values:
             print(f"kostka którą rzucamy: {dice}")
@@ -137,10 +139,6 @@ async def damage(message_content, display_name):
             title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)} z modyfikatorem {modifier_sign}{modifier_value}"
         else:
             title = f"{display_name} rzuca obrażenia kostką: {', '.join(dice_types)}"
-
-        # Print each roll result
-        for i, roll in enumerate(rolls):
-            print(f"Rzut {i + 1}: {roll}")
 
         # Usuwanie niepotrzebnego 'k' przed liczbami kostek
         title = re.sub(r'k0*(\d+)', r'k\1', title)
