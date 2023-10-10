@@ -100,7 +100,11 @@ async def damage(message_content, display_name):
         dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(0))]  # Znajduje wszystkie wartości rzutów kostką
         modifier = damage_match.group(2) if damage_match.group(2) is not None else "+0"  # Znajduje modyfikator
 
-        # Dzieli modyfikator na znak i wartość
+        # Usunięcie ostatniej wartości z dice_values, jeżeli modyfikator jest obecny
+        if modifier != "+0" and dice_values:
+            dice_values.pop(-1)
+
+    # Dzieli modyfikator na znak i wartość
         modifier_sign = "+" if modifier[0] == '+' else "-"
         modifier_value = int(modifier[1:]) if len(modifier) > 1 else 0
 
