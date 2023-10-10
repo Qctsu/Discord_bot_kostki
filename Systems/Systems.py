@@ -99,17 +99,19 @@ class Systems(commands.Cog):
     async def swae(self, ctx, duration: int):
         description = f"System **SWAE** został aktywowany na kanale **{ctx.channel.name}** na **{duration} godzin(y)**."
         fields = {
-            "!test": (
-                "**Użycie**: !test XkY(+Z/-Z)\n"
+            "!(test|t)": (
+                "**Użycie**: !(test|t) XkY(+Z/-Z)\n"
+                "- !(test|t) - komenda do wykonania rzutu na test (można wpisać !test lub !t)\n"
                 "- X - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
                 "- Y - Typ kostki (np. 6 dla k6, 10 dla k10, itp.)\n"
                 "- (+Z/-Z) - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
                 "Rzuty kostką typu Y, ilość kości X, dodatkowo rzuca kością figury (k6) i zwraca lepszy wynik.\n"
                 "W teście mamy możliwość przerzutu używając reakcji 🔄 w odpowiedzi na rzut.\n"
-                "**Przykład**: `!test 2k8+2` (2 rzut k8 plus modyfikator +2)\n\n"
+                "**Przykład**: `!(test|t) 2k8+2` (2 rzut k8 plus modyfikator +2)\n\n"
             ),
-            "!damage": (
-                "**Użycie**: !damage kY;Z(+Z/-Z) lub !damage XkY(+Z/-Z)\n"
+            "!(damage|d|o)": (
+                "**Użycie**: !(damage|d|o) kY;Z(+Z/-Z) lub !(damage|d|o) XkY(+Z/-Z)\n"
+                "- !(damage|d|o) - komenda do wykonania rzutu na obrażenia (można wpisać !damage, !d lub !o)\n"
                 "- X - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
                 "- Y - Typ pierwszej kostki (np. 6 dla k6, 12 dla k12, itp.)\n"
                 "- Z - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
@@ -117,8 +119,8 @@ class Systems(commands.Cog):
                 "Rzuty kostkami określonymi przez Y oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
                 "lub\n"
                 "Rzuty kostką typu Y, ilość kości X oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
-                "**Przykład**: `!damage k12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)\n"
-                "**Przykład 2**: `!damage 2k10+2` (2 rzuty k10 plus modyfikator +2)\n\n"
+                "**Przykład**: `!(damage|d|o) k12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)\n"
+                "**Przykład 2**: `!(damage|d|o) 2k10+2` (2 rzuty k10 plus modyfikator +2)\n\n"
                 "Wsparcie merytoryczne: **piotrek_jay**\n"
                 "Błędy w działaniu proszę zgłaszać do: **kucu**"
             )

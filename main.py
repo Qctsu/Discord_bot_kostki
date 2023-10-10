@@ -13,6 +13,11 @@ from Systems.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20  # 
 from Systems.SWAE import damage, test, handle_reaction_add_SWAE  # Importowanie funkcji
 import asyncio
 from Commands.setting_commands import TimeZone
+import config
+
+# Uzyskujemy ścieżkę do bazy danych
+database_path = config.get_database_path()
+print(f"Ścieżka do bazy danych: {database_path}")
 
 # Wczytywanie zmiennych środowiskowych z pliku .env
 load_dotenv()
@@ -132,10 +137,10 @@ async def process_2d20_commands(message):
 async def process_SWAE_commands(message):
     # Tutaj umieść logikę dla systemu SWAE
     # Logika dla testów
-    test_match = re.match(r'!test (\d*)k(\d+)([+\-]\d+)?', message.content)
+    test_match = re.match(r'!(test|t) (\d*)k(\d+)([+\-]\d+)?', message.content)
 
     # Logika dla obrażeń
-    damage_match = re.match(r'!damage (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-])\d+)?', message.content)
+    damage_match = re.match(r'!(damage|d|o) (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-])\d+)?', message.content)
 
     if test_match:
         user_id = message.author.display_name

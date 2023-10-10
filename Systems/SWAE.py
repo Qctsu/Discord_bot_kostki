@@ -5,19 +5,21 @@ from nextcord import Embed
 
 # Funkcja do testów
 async def test(message_content, display_name):
-    test_match = re.match(r'!test (\d*)k(\d+)([+\-]\d+)?', message_content)
+    test_match = re.match(r'!(test|t) (\d*)k(\d+)([+\-]\d+)?', message_content)
 
     if test_match is None:
         return None, False
 
-    num_dice = int(test_match.groups()[0]) if test_match.groups()[0] else 1
-    dice_type = int(test_match.groups()[1])
-    modifier = int(test_match.groups()[2]) if test_match.groups()[2] else 0
+    num_dice = int(test_match.groups()[1]) if test_match.groups()[1] else 1
+    dice_type = int(test_match.groups()[2])
+    modifier = int(test_match.groups()[3]) if test_match.groups()[3] else 0
 
     all_rolls = []
+    all_raw_rolls = [] #lista surowych rzutów
     for _ in range(num_dice):
         roll = 0  # Resetujemy wartość roll przy każdej nowej kostce
         current_roll = random.randint(1, dice_type)  # Pierwszy rzut kostką
+        all_raw_rolls.append(current_roll) #surowe rzuty gracza
         explosions = 0  # Resetujemy licznik eksplozji
 
         while current_roll == dice_type and explosions < 10:  # Sprawdzamy eksplozje
@@ -29,6 +31,7 @@ async def test(message_content, display_name):
         all_rolls.append(roll)  # Dodajemy sumę do listy
 
     wild_roll = random.randint(1, 6)
+    wild_roll_raw = wild_roll #surowy rzut kości figury
     explosions = 0
 
     while wild_roll == 6 and explosions < 10:
@@ -43,7 +46,7 @@ async def test(message_content, display_name):
     outcome = ""
     can_reroll = True
 
-    if any(roll == 1 for roll in all_rolls) and wild_roll == 1:
+    if any(roll == 1 for roll in all_raw_rolls) and wild_roll_raw == 1:
         outcome = "Krytyczny pech"
         can_reroll = False
     elif highest_roll < 4:
@@ -77,12 +80,12 @@ async def test(message_content, display_name):
 async def damage(message_content, display_name):
     damage_match = None
     damage_match_2 = None
-    # Wzorzec do dopasowania komendy !damage
+    # Wzorzec do dopasowania komendy !(damage|d|o)
     if ';' in message_content:
-        damage_match = re.match(r'!damage (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-]\d+))?', message_content)
+        damage_match = re.match(r'!(damage|d|o) (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-]\d+))?', message_content)
         damage_match = re.search(r'(\d+(?:;\d+)*)([-+]\d+)?$', damage_match.group(0))
     elif ';' not in message_content:
-        damage_match_2 = re.match(r'!damage (\d*)k(\d+)([+\-]\d+)?', message_content)
+        damage_match_2 = re.match(r'!(damage|d|o) (\d*)k(\d+)([+\-]\d+)?', message_content)
 
     # Jeśli wzorzec nie pasuje, zwracamy None
     if damage_match is None and damage_match_2 is None:
@@ -94,8 +97,8 @@ async def damage(message_content, display_name):
     if damage_match:
         print(f"pattern 1")
         # Grupy dopasowania
-        dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(1))]  # Znajduje wszystkie wartości rzutów kostką
-        modifier = damage_match.group(2) if damage_match.group(2) is not None else "+0"  # Znajduje modyfikator
+        dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(2))]  # Znajduje wszystkie wartości rzutów kostką
+        modifier = damage_match.group(4) if damage_match.group(4) is not None else "+0"  # Znajduje modyfikator
 
         # Dzieli modyfikator na znak i wartość
         modifier_sign = "+" if modifier[0] == '+' else "-"
@@ -152,9 +155,9 @@ async def damage(message_content, display_name):
 
     elif damage_match_2:
         print(f"pattern 2")
-        num_dice = int(damage_match_2.groups()[0]) if damage_match_2.groups()[0] else 1
-        dice_type = int(damage_match_2.groups()[1])
-        modifier = int(damage_match_2.groups()[2]) if damage_match_2.groups()[2] else 0
+        num_dice = int(damage_match_2.groups()[1]) if damage_match_2.groups()[1] else 1
+        dice_type = int(damage_match_2.groups()[2])
+        modifier = int(damage_match_2.groups()[3]) if damage_match_2.groups()[2] else 0
 
         all_rolls = []
         for _ in range(num_dice):
@@ -200,7 +203,7 @@ async def handle_reaction_add_SWAE(reaction, user, bot, user_last_commands):
         # Usuń wszystkie reakcje z wiadomości
         await reaction.message.clear_reactions()
 
-    # Sprawdzanie czy reakcja jest ":arrows_counterclockwise:" i czy wiadomość zawiera "!test"
+    # Sprawdzanie czy reakcja jest ":arrows_counterclockwise:" i czy wiadomość zawiera "!(test|t)"
     elif reaction.emoji == '🔄' and message.author == bot.user:
         if message.id in user_last_commands:
             user_id = user_last_commands[message.id]["user_id"]  # Pobierz nazwę użytkownika po ID wiadomości

@@ -1,7 +1,8 @@
 import aiosqlite
+import config
 
 async def create_table():
-    async with aiosqlite.connect('DataBase/discord_bot_kostki.db') as db:
+    async with aiosqlite.connect(config.get_database_path()) as db:
         cursor = await db.cursor()
 
         # Tworzenie tabeli active_systems, jeśli nie istnieje

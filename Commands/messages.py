@@ -1,7 +1,7 @@
 from nextcord.ext import commands
 import datetime
 import re
-from Systems.two_d_twenty import roll_k6, roll_k20, handle_reaction_add
+from Systems.two_d_twenty import roll_k6, roll_k20
 from Systems.SWAE import damage, test
 
 class MessageEvents(commands.Cog):
@@ -53,10 +53,10 @@ class MessageEvents(commands.Cog):
             # System SWAE
             elif system_info['system'] == 'SWAE' and system_info['end_time'] > datetime.datetime.utcnow():
                 # Logika dla testów
-                test_match = re.match(r'!test (\d*)k(\d+)([+\-]\d+)?', message.content)
+                test_match = re.match(r'!(test|t) (\d*)k(\d+)([+\-]\d+)?', message.content)
 
                 # Logika dla obrażeń
-                damage_match = re.match(r'!damage (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-])\d+)?', message.content)
+                damage_match = re.match(r'!(damage|d|o) (?:k)?(\d+)(?:;(?:k)?(\d+))*(?:([+\-])\d+)?', message.content)
 
                 if test_match:
                     embed = await test(message.content, message.author.display_name)

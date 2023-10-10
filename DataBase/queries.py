@@ -1,7 +1,8 @@
 import aiosqlite
+import config
 
 async def set_timezone(user_id, timezone):
-    async with aiosqlite.connect('DataBase/discord_bot_kostki.db') as db:
+    async with aiosqlite.connect(config.get_database_path()) as db:
         cursor = await db.cursor()
 
         await cursor.execute('''
@@ -12,7 +13,7 @@ async def set_timezone(user_id, timezone):
         await db.commit()
 
 async def get_timezone(user_id):
-    async with aiosqlite.connect('DataBase/discord_bot_kostki.db') as db:
+    async with aiosqlite.connect(config.get_database_path()) as db:
         cursor = await db.cursor()
 
         await cursor.execute('SELECT timezone FROM timezones WHERE user_id = ?', (str(user_id),))

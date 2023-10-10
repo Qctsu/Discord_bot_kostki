@@ -41,20 +41,20 @@ class SystemCommands(commands.Cog):
                                   "\n**Przykład**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)",
                             inline=False)
         elif system_name == 'SWAE':
-            embed.add_field(name="!test", value="**Użycie**: !test [X]kY[+Z/-Z]\n"
+            embed.add_field(name="!(test|t)", value="**Użycie**: !(test|t) [X]kY[+Z/-Z]\n"
                                                 "- [X] - Opcjonalna liczba rzutów kostką (domyślnie 1)\n"
                                                 "- Y - Typ kostki (np. 6 dla k6, 10 dla k10, itp.)\n"
                                                 "- [+Z/-Z] - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
                                                 "Rzuty kostką typu Y. Jeśli [X] = 1, dodatkowo rzuca kością figury (k6) i zwraca lepszy wynik.\n"
-                                                "\n**Przykład**: `!test k8+2` (1 rzut k8 plus modyfikator +2)",
+                                                "\n**Przykład**: `!(test|t) k8+2` (1 rzut k8 plus modyfikator +2)",
                             inline=False)
 
-            embed.add_field(name="!damage", value="**Użycie**: !damage Y[;Z][+A/-A]\n"
+            embed.add_field(name="!(damage|d|o)", value="**Użycie**: !(damage|d|o) Y[;Z][+A/-A]\n"
                                                   "- Y - Typ pierwszej kostki (np. 6 dla k6, 12 dla k12, itp.)\n"
                                                   "- [;Z] - Opcjonalna, dodatkowa kostka, może być powtarzana wielokrotnie (np. ;8;4 dla dodatkowych rzutów k8 i k4)\n"
                                                   "- [+A/-A] - Opcjonalny modyfikator, który zostanie dodany/odjęty od wyniku\n"
                                                   "Rzuty kostkami określonymi przez Y oraz opcjonalne Z, a następnie sumuje wyniki i dodaje/odejmuje modyfikator.\n"
-                                                  "\n**Przykład**: `!damage 12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)",
+                                                  "\n**Przykład**: `!(damage|d|o) 12;6;6+2` (Rzuty k12, k6, k6, suma plus modyfikator +2)",
                             inline=False)
 
         await ctx.send(embed=embed)
