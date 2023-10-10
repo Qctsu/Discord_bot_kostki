@@ -97,8 +97,8 @@ async def damage(message_content, display_name):
     if damage_match:
         print(f"pattern 1")
         # Grupy dopasowania
-        dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(2))]  # Znajduje wszystkie wartości rzutów kostką
-        modifier = damage_match.group(4) if damage_match.group(4) is not None else "+0"  # Znajduje modyfikator
+        dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(0))]  # Znajduje wszystkie wartości rzutów kostką
+        modifier = damage_match.group(2) if damage_match.group(2) is not None else "+0"  # Znajduje modyfikator
 
         # Dzieli modyfikator na znak i wartość
         modifier_sign = "+" if modifier[0] == '+' else "-"
@@ -157,7 +157,7 @@ async def damage(message_content, display_name):
         print(f"pattern 2")
         num_dice = int(damage_match_2.groups()[1]) if damage_match_2.groups()[1] else 1
         dice_type = int(damage_match_2.groups()[2])
-        modifier = int(damage_match_2.groups()[3]) if damage_match_2.groups()[2] else 0
+        modifier = int(damage_match_2.groups()[3]) if damage_match_2.groups()[3] else 0
 
         all_rolls = []
         for _ in range(num_dice):
