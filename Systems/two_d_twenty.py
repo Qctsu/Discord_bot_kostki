@@ -111,33 +111,41 @@ async def handle_reaction_add_2d20(reaction, user, bot):
 
     message = reaction.message
 
+    # Pobranie nazwy użytkownika z tytułu embeda
+    user_display_name = message.embeds[0].title.split()[0]
+
+    # Jeśli użytkownik, który dodał reakcję, nie jest tym samym użytkownikiem, który wysłał oryginalną wiadomość
+    if user_display_name != user.display_name:
+        await reaction.remove(user)  # Usuń reakcję tego użytkownika
+        return
+
     # Sprawdź, czy reakcja jest ":x:"
     if reaction.emoji == '❌' and message.author == bot.user:
         # Usuń wszystkie reakcje z wiadomości
         await reaction.message.clear_reactions()
 
     if reaction.emoji == '🔄' and message.author == bot.user:
-
         if 'k20' not in message.embeds[0].title:
             return
 
         reroll_indexes = []
-        for i, react in enumerate(message.reactions[:-1]):
+        for i, react in enumerate(message.reactions[:-2]):  # -2 to exclude last two reactions 🔄 and ❌
             if user in await react.users().flatten():
                 reroll_indexes.append(i)
 
-        rolls = [int(re.search(r'\d+', res).group()) for res in message.embeds[0].description.split('\n')]
+        original_rolls = [int(re.search(r'\d+', res).group()) for res in message.embeds[0].description.split('\n')]
         threshold = int(re.search(r'(\d+)$', message.embeds[0].title).group())
         successes, crits, complications = 0, 0, 0
 
+        rerolled_values = {}
         for i in reroll_indexes:
-            adjusted_index = i - 1  # Ajusting the index to account for the additional emoji
             new_roll = random.randint(1, 20)
-            rolls[adjusted_index] = new_roll
+            rerolled_values[i] = (original_rolls[i], new_roll)
+            original_rolls[i] = new_roll
 
-        rolls.sort()
+        original_rolls.sort()
 
-        for roll in rolls:
+        for roll in original_rolls:
             if roll == 1:
                 successes += 2
                 crits += 1
@@ -148,7 +156,18 @@ async def handle_reaction_add_2d20(reaction, user, bot):
 
         await message.delete()
 
-        results = [f"{roll} - {'Sukces (**Kryt**)' if roll == 1 else 'Porażka (**Komplikacja**)' if roll == 20 else 'Sukces' if roll <= threshold else 'Porażka'}" for roll in rolls]
+        results = []
+        for index, roll in enumerate(original_rolls):
+            prev_value = rerolled_values.get(index, (None, None))[0]
+
+            if prev_value is not None:
+                results.append(
+                    f"{roll} (było {prev_value}) - {'Sukces (**Kryt**)' if roll == 1 else 'Porażka (**Komplikacja**)' if roll == 20 else 'Sukces' if roll <= threshold else 'Porażka'}"
+                )
+            else:
+                results.append(
+                    f"{roll} - {'Sukces (**Kryt**)' if roll == 1 else 'Porażka (**Komplikacja**)' if roll == 20 else 'Sukces' if roll <= threshold else 'Porażka'}"
+                )
 
         # Utwórz i sformatuj embed z wynikami po przerzucie
         embed = Embed(
