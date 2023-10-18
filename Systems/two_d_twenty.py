@@ -49,13 +49,11 @@ def roll_k6(message_content, display_name):
 # Funkcja do rzutu kostką k20
 def roll_k20(message_content, display_name):
     # Sprawdzanie czy wiadomość pasuje do wzorca kostki k20 z opcjonalnym focusem
-    k20_match = re.match(r'!(\d*)k20;(\d+)(?:;(\d+))?', message_content)
+    k20_match = re.match(r'!(\d+)k20;(\d+)(?:;(\d+))?', message_content)
 
-    # Określa liczbę rzutów kostką i próg sukcesu
-    num_dice = int(k20_match.groups()[0]) if k20_match.groups()[0] else 1
+    # Określa liczbę rzutów kostką, próg sukcesu i wartość fokusa
+    num_dice = int(k20_match.groups()[0])
     threshold = int(k20_match.groups()[1])
-
-    # Wyodrębnij wartość fokusa, jeśli jest dostępna
     focus = int(k20_match.groups()[2]) if k20_match.groups()[2] else None
 
     successes, crits, complications = 0, 0, 0
@@ -72,20 +70,45 @@ def roll_k20(message_content, display_name):
             crits += 1
         elif roll == 20:
             complications += 1
-        elif roll <= threshold:
-            successes += 1
-
-    # Jeśli fokus jest dostępny i przynajmniej jeden sukces, dodaj dodatkowy sukces
-    if focus is not None and successes > 0 and any(roll <= focus for roll in rolls):
-        successes += 1
+        elif focus is not None:
+            if roll <= 1:
+                successes += 2
+            elif roll <= focus:
+                successes += 2
+            elif roll <= threshold:
+                successes += 1
+        else:
+            if roll <= 1:
+                successes += 2
+            elif roll <= threshold:
+                successes += 1
 
     # Sortowanie i przygotowanie listy wyników
     rolls.sort()
     results = []
     for i, roll in enumerate(rolls):
-        results.append(
-            f"{chr(65 + i)}. {roll} - {'Sukces (**Kryt**)' if roll == 1 else 'Porażka (**Komplikacja**)' if roll == 20 else 'Sukces' if roll <= threshold else 'Porażka'}"
-        )
+        result_str = f"{chr(65 + i)}. {roll} - "
+        if roll == 1:
+            result_str += "Sukces (**Kryt**)"
+        elif roll == 20:
+            result_str += "Porażka (**Komplikacja**)"
+        elif focus is not None:
+            if roll <= 1:
+                result_str += "Sukces (**Kryt**)"
+            elif roll <= focus:
+                result_str += "Sukces"
+            elif roll <= threshold:
+                result_str += "Sukces"
+            else:
+                result_str += "Porażka"
+        else:
+            if roll <= 1:
+                result_str += "Sukces (**Kryt**)"
+            elif roll <= threshold:
+                result_str += "Sukces"
+            else:
+                result_str += "Porażka"
+        results.append(result_str)
 
     # Tworzenie tytułu embeda, uwzględniając informację o fokusie, jeśli jest dostępny
     title = f"{display_name} rzuca kostką k20 {num_dice} razy dla testu {threshold}"
