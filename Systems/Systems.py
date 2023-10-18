@@ -93,6 +93,7 @@ class Systems(commands.Cog):
                 "**Przykład bez fokusu**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)\n"
                 "**Przykład z fokusem**: `!3k20;12;5` (3 rzuty k20, próg sukcesu 12, fokus 5)\n\n"
                 "Wsparcie merytoryczne: **piotrek_jay**\n"
+                "Pomoc w rozwoju: **Alianora**\n"
                 "Błędy w działaniu proszę zgłaszać do: **kucu**"
             )
         }
