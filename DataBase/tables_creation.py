@@ -1,10 +1,10 @@
 import aiosqlite
-import config
+import db_config
 import sqlite3
 import openpyxl
 
 async def create_table():
-    async with aiosqlite.connect(config.get_database_path()) as db:
+    async with aiosqlite.connect(db_config.get_database_path()) as db:
         cursor = await db.cursor()
 
         # Tworzenie tabeli active_systems, jeśli nie istnieje
@@ -34,6 +34,7 @@ async def create_table():
                 timezone TEXT,
                 bot_nick TEXT,
                 prefix TEXT DEFAULT "!",
+                roll_prefix TEXT DEFAULT "k",
                 welcome_channel INTEGER,
                 log_channel INTEGER,
                 moderation_role INTEGER,
@@ -41,7 +42,8 @@ async def create_table():
                 auto_role INTEGER,
                 language TEXT DEFAULT "pl",
                 localization TEXT DEFAULT "pl",
-                roll_localization TEXT default "pl"
+                roll_localization TEXT default "pl",
+                removal_date TIMESTAMP
             )
         ''')
 
@@ -55,7 +57,7 @@ def load_data_from_excel_to_db(excel_file):
     # Zliczanie liczby wierszy w arkuszu (bez nagłówka)
     excel_row_count = sum(1 for row in sheet.iter_rows(values_only=True)) - 1
 
-    conn = sqlite3.connect(config.get_database_path())
+    conn = sqlite3.connect(db_config.get_database_path())
     cursor = conn.cursor()
 
     # Zliczanie liczby wpisów w tabeli time_zones

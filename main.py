@@ -1,4 +1,6 @@
 # Importowanie niezbędnych modułów
+import aiosqlite
+
 import DataBase.tables_creation as DB_kostki
 from DataBase.active_systems import get_active_system, remove_active_system, deactivate_expired_systems, \
     clear_active_systems
@@ -7,16 +9,18 @@ import os
 import re
 from dotenv import load_dotenv
 import nextcord
-from nextcord.ext import commands
+from nextcord.ext import commands, tasks
 from nextcord import Embed
 from Systems.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20  # Importowanie funkcji
 from Systems.SWAE import damage, test, handle_reaction_add_SWAE  # Importowanie funkcji
 import asyncio
 from Commands.setting_commands import TimeZone
-import config
+import db_config
+from nextcord.ui import Select, View
+from langdetect import detect
 
 # Uzyskujemy ścieżkę do bazy danych
-database_path = config.get_database_path()
+database_path = db_config.get_database_path()
 print(f"Ścieżka do bazy danych: {database_path}")
 
 # Wczytywanie zmiennych środowiskowych z pliku .env
@@ -35,15 +39,18 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # Dodanie Cog z komendą settimezone
 bot.add_cog(TimeZone(bot))
 
+
 async def check_and_deactivate_systems():
     while True:
         print("Sprawdzam i deaktywuje wygasłe systemy...")
         await deactivate_expired_systems()
         await asyncio.sleep(60 * 30)  # Spanko na 30 minut
 
+
 async def async_deactivate_expired_systems():
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, deactivate_expired_systems)
+
 
 # Słownik do przechowywania ostatnich komend użytkowników do przerzutu
 user_last_commands = {}
@@ -61,6 +68,118 @@ async def on_ready():
     print(f'Pakiet systemów załadowany')
 
     bot.loop.create_task(check_and_deactivate_systems())
+
+    print(f'Sprawdzanie usunięć z gildii')
+    check_removal_dates.start()
+
+async def get_inviter(guild):
+    try:
+        # Pobieramy wpisy z dziennika audytu dotyczące dodania bota
+        audit_logs = await guild.audit_logs(action=nextcord.AuditLogAction.bot_add).flatten()
+
+        # Spróbuj znaleźć najnowszy wpis, który odnosi się do dodania Twojego bota
+        for entry in audit_logs:
+            if entry.target.id == bot.user.id:
+                return entry.user
+
+        # Jeśli nie znaleziono wpisu, zwróć None
+        return None
+
+    except Exception as e:
+        print(f"Wystąpił błąd podczas próby uzyskania osoby zapraszającej bota na serwer {guild.name}. Błąd: {e}")
+        return None
+
+
+@bot.event
+async def on_guild_join(guild):
+    # Pobierz kilka ostatnich wiadomości z najbardziej aktywnego kanału
+    # Zakładam, że pierwszy dostępny kanał tekstowy to "najbardziej aktywny"
+    channel = next((x for x in guild.channels if isinstance(x, nextcord.TextChannel) and x.permissions_for(guild.me).read_messages), None)
+
+    if channel:
+        messages = await channel.history(limit=50).flatten()
+        text_sample = " ".join([msg.content for msg in messages])
+
+        # Wykrywanie języka
+        detected_language = detect(text_sample)
+
+        # Sprawdzenie, czy to język polski
+        if detected_language == "pl":
+            lang = "pl"
+        else:
+            lang = "eng" # Można tu dodać więcej warunków dla innych języków
+
+        # Dodanie wykrytego języka do tabeli konfiguracyjnej
+        async with aiosqlite.connect(database_path) as db:
+            cursor = await db.cursor()
+            await cursor.execute('''INSERT OR IGNORE INTO server_config (guild_id, language, localization, roll_localization) VALUES (?, ?, ?, ?)''', (guild.id, lang, lang, lang))
+            await db.commit()
+            await cursor.close()
+
+        # Wysłanie wiadomości DM do osoby, która dodała bota
+        inviter = await get_inviter(guild)
+        print(f"Inviter: {inviter}")  # Sprawdź, czy uzyskujesz prawidłowego zapraszającego
+
+        if inviter is None:
+            print("Nie udało się uzyskać osoby zapraszającej bota.")  # Upewnij się, że ta linia nie jest wydrukowywana
+            return
+
+        await inviter.send(f"Wykryłem, że dominujący język na serwerze to {lang}. Język został dodany do konfiguracji. Proszę o dalszą konfigurację.")
+        print("Wiadomość DM wysłana!")  # Upewnij się, że ta linia jest wydrukowywana
+
+class LanguageSelect(Select):
+    def __init__(self):
+        options = [
+            nextcord.ui.SelectOption(label="Polski", value="PL"),
+            nextcord.ui.SelectOption(label="English", value="ENG")
+        ]
+        super().__init__(placeholder='Wybierz język...', options=options)
+
+    async def callback(self, interaction: nextcord.Interaction):
+        await interaction.response.send_message(f"Wybrano język: {self.values[0]}")
+        # Można tutaj dodać aktualizację języka w bazie danych
+@bot.command(name='config', aliases=['konfiguracja'])
+async def config(ctx, action=None, setting_name=None, value=None):
+
+    # Usuń wiadomość z komendą
+    try:
+        await ctx.message.delete()
+    except nextcord.errors.Forbidden:
+        # Bot nie ma uprawnień do usuwania wiadomości
+        pass
+
+    # Upewnij się, że osoba wykonująca komendę ma odpowiednie uprawnienia
+    if not ctx.author.guild_permissions.manage_guild:
+        await ctx.author.send("Nie masz wystarczających uprawnień do modyfikacji konfiguracji!")
+        return
+
+    async with aiosqlite.connect(database_path) as db:
+        cursor = await db.cursor()
+
+        if action is None:
+            # Rozpocznij proces konfiguracji
+
+            embed = Embed(title="Konfiguracja", description="Wybierz język bota:")
+            view = View()
+            view.add_item(LanguageSelect())
+
+            await ctx.author.send(embed=embed, view=view)
+
+        if action == "show":
+            await cursor.execute("SELECT * FROM server_config WHERE guild_id = ?", (ctx.guild.id,))
+            config_data = await cursor.fetchone()
+            if config_data:
+                # Formatujemy dane, aby były czytelne
+                columns = [desc[0] for desc in cursor.description]
+                config_message = "\n".join([f"{column}: {value}" for column, value in zip(columns, config_data)])
+                await ctx.author.send(f"Konfiguracja serwera:\n{config_message}")
+            else:
+                await ctx.author.send("Konfiguracja dla tego serwera nie istnieje.")
+        # Modyfikowanie konfiguracji dodamy później
+        # ...
+
+        # Zamykamy kursor
+        await cursor.close()
 
 
 # Komenda !clearsystems do czyszczenia aktywności wszystkich systemów
@@ -190,6 +309,30 @@ async def on_reaction_add(reaction, user):
         else:
             await remove_active_system(channel_id)
 
+@bot.event
+async def on_guild_remove(guild):
+    removal_date = datetime.datetime.utcnow()
+    async with aiosqlite.connect(database_path) as db:
+        cursor = await db.cursor()
+        await cursor.execute('''UPDATE server_config SET removal_date = ? WHERE guild_id = ?''', (removal_date, guild.id))
+        await db.commit()
+        await cursor.close()
+
+@tasks.loop(hours=24)  # Sprawdzanie co 24 godziny
+async def check_removal_dates():
+    current_date = datetime.datetime.utcnow()
+    async with aiosqlite.connect(database_path) as db:
+        cursor = await db.cursor()
+        await cursor.execute('''SELECT guild_id, removal_date FROM server_config WHERE removal_date IS NOT NULL''')
+        rows = await cursor.fetchall()
+
+        for row in rows:
+            removal_date = datetime.datetime.fromisoformat(row[1])  # Zakładając, że data jest zapisywana w formacie ISO
+            if (current_date - removal_date).days >= 7:  # Jeżeli minął tydzień
+                await cursor.execute('''DELETE FROM server_config WHERE guild_id = ?''', (row[0],))
+
+        await db.commit()
+        await cursor.close()
 
 # obsługa błędów
 @bot.event

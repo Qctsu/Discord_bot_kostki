@@ -1,10 +1,10 @@
 import aiosqlite
 from datetime import datetime, timedelta
-import config
+import db_config
 
 # Funkcja do dodawania aktywnego systemu do bazy danych
 async def add_active_system(channel_id, system_name, duration_hours, activation_time, end_time):
-    async with aiosqlite.connect(config.get_database_path()) as db:
+    async with aiosqlite.connect(db_config.get_database_path()) as db:
         cursor = await db.cursor()
 
         # Formatowanie daty, aby usunąć milisekundy
@@ -27,7 +27,7 @@ async def add_active_system(channel_id, system_name, duration_hours, activation_
 
 # Funkcja do usuwania aktywnego systemu z bazy danych
 async def remove_active_system(channel_id):
-    async with aiosqlite.connect(config.get_database_path()) as db:
+    async with aiosqlite.connect(db_config.get_database_path()) as db:
         cursor = await db.cursor()
 
         await cursor.execute('DELETE FROM active_systems WHERE channel_id = ?', (str(channel_id),))
@@ -37,7 +37,7 @@ async def remove_active_system(channel_id):
 
 # Funkcja do pobierania aktywnego systemu z bazy danych
 async def get_active_system(channel_id):
-    async with aiosqlite.connect(config.get_database_path()) as db:
+    async with aiosqlite.connect(db_config.get_database_path()) as db:
         cursor = await db.cursor()
 
         await cursor.execute('SELECT * FROM active_systems WHERE channel_id = ?', (str(channel_id),))
@@ -63,7 +63,7 @@ async def get_active_system(channel_id):
 
 # Funkcja do dezaktywacji przeterminowanych systemów
 async def deactivate_expired_systems():
-    async with aiosqlite.connect(config.get_database_path()) as db:
+    async with aiosqlite.connect(db_config.get_database_path()) as db:
         cursor = await db.cursor()
         sql = '''
             DELETE FROM active_systems WHERE end_time < CURRENT_TIMESTAMP
@@ -73,7 +73,7 @@ async def deactivate_expired_systems():
 
 #Czyszczenie wszystkich systemów
 async def clear_active_systems():
-    async with aiosqlite.connect(config.get_database_path()) as db:
+    async with aiosqlite.connect(db_config.get_database_path()) as db:
         cursor = await db.cursor()
 
         # Usuwanie wszystkich rekordów z tabeli active_systems
