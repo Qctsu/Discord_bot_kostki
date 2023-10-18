@@ -48,12 +48,16 @@ def roll_k6(message_content, display_name):
 
 # Funkcja do rzutu kostką k20
 def roll_k20(message_content, display_name):
-    # Sprawdzanie czy wiadomość pasuje do wzorca kostki k20
-    k20_match = re.match(r'!(\d*)k20;(\d+)', message_content)
+    # Sprawdzanie czy wiadomość pasuje do wzorca kostki k20 z opcjonalnym focusem
+    k20_match = re.match(r'!(\d*)k20;(\d+)(?:;(\d+))?', message_content)
 
     # Określa liczbę rzutów kostką i próg sukcesu
     num_dice = int(k20_match.groups()[0]) if k20_match.groups()[0] else 1
     threshold = int(k20_match.groups()[1])
+
+    # Wyodrębnij wartość fokusa, jeśli jest dostępna
+    focus = int(k20_match.groups()[2]) if k20_match.groups()[2] else None
+
     successes, crits, complications = 0, 0, 0
     rolls = []
 
@@ -71,6 +75,10 @@ def roll_k20(message_content, display_name):
         elif roll <= threshold:
             successes += 1
 
+    # Jeśli fokus jest dostępny i przynajmniej jeden sukces, dodaj dodatkowy sukces
+    if focus is not None and successes > 0 and any(roll <= focus for roll in rolls):
+        successes += 1
+
     # Sortowanie i przygotowanie listy wyników
     rolls.sort()
     results = []
@@ -79,10 +87,18 @@ def roll_k20(message_content, display_name):
             f"{chr(65 + i)}. {roll} - {'Sukces (**Kryt**)' if roll == 1 else 'Porażka (**Komplikacja**)' if roll == 20 else 'Sukces' if roll <= threshold else 'Porażka'}"
         )
 
+    # Tworzenie tytułu embeda, uwzględniając informację o fokusie, jeśli jest dostępny
+    title = f"{display_name} rzuca kostką k20 {num_dice} razy dla testu {threshold}"
+    if focus is not None:
+        title += f" oraz dla fokusu {focus}"
+
+    # Tworzenie opisu dla embeda
+    description = '\n'.join(results)
+
     # Tworzenie i wysyłanie embeda
     embed = Embed(
-        title=f"{display_name} rzuca kostką k20 {num_dice} razy dla testu {threshold}",
-        description='\n'.join(results),
+        title=title,
+        description=description,
         color=0x3498db
     )
 

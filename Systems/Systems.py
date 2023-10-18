@@ -81,14 +81,17 @@ class Systems(commands.Cog):
                 "**Przykład**: `!3k6` (3 rzuty k6)\n\n"
             ),
             "!k20": (
-                "**Użycie**: !Xk20;Y\n"
+                "**Użycie**: !Xk20;Y[;F]\n"
                 "- X - liczba rzutów kostką (np. !3k20 dla 3 rzutów)\n"
                 "- Y - próg sukcesu\n"
+                "- F (opcjonalne) - wartość fokusu\n"
                 "Rzut jedną lub więcej kostkami k20, gdzie: \n"
                 "każdy wynik równy lub niższy Y jest sukcesem. \n"
                 "'1' to krytyczny sukces (2 sukcesy), \n"
                 "'20' to komplikacja (porażka).\n"
-                "**Przykład**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)\n\n"
+                "Jeśli F jest dostępne, wyniki równe lub niższe F również są sukcesem.\n\n"
+                "**Przykład bez fokusu**: `!3k20;12` (3 rzuty k20, próg sukcesu 12)\n"
+                "**Przykład z fokusem**: `!3k20;12;5` (3 rzuty k20, próg sukcesu 12, fokus 5)\n\n"
                 "Wsparcie merytoryczne: **piotrek_jay**\n"
                 "Błędy w działaniu proszę zgłaszać do: **kucu**"
             )
