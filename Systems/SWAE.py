@@ -15,11 +15,11 @@ async def test(message_content, display_name):
     modifier = int(test_match.groups()[3]) if test_match.groups()[3] else 0
 
     all_rolls = []
-    all_raw_rolls = [] #lista surowych rzutów
+    all_raw_rolls = []  # lista surowych rzutów
     for _ in range(num_dice):
         roll = 0  # Resetujemy wartość roll przy każdej nowej kostce
         current_roll = random.randint(1, dice_type)  # Pierwszy rzut kostką
-        all_raw_rolls.append(current_roll) #surowe rzuty gracza
+        all_raw_rolls.append(current_roll)  # surowe rzuty gracza
         explosions = 0  # Resetujemy licznik eksplozji
 
         while current_roll == dice_type and explosions < 10:  # Sprawdzamy eksplozje
@@ -31,7 +31,7 @@ async def test(message_content, display_name):
         all_rolls.append(roll)  # Dodajemy sumę do listy
 
     wild_roll = random.randint(1, 6)
-    wild_roll_raw = wild_roll #surowy rzut kości figury
+    wild_roll_raw = wild_roll  # surowy rzut kości figury
     explosions = 0
 
     while wild_roll == 6 and explosions < 10:
@@ -77,6 +77,7 @@ async def test(message_content, display_name):
     return embed, can_reroll
 
 
+# Funkcja do dmg
 async def damage(message_content, display_name):
     damage_match = None
     damage_match_2 = None
@@ -97,14 +98,15 @@ async def damage(message_content, display_name):
     if damage_match:
         print(f"pattern 1")
         # Grupy dopasowania
-        dice_values = [int(value) for value in re.findall(r'\d+', damage_match.group(0))]  # Znajduje wszystkie wartości rzutów kostką
+        dice_values = [int(value) for value in
+                       re.findall(r'\d+', damage_match.group(0))]  # Znajduje wszystkie wartości rzutów kostką
         modifier = damage_match.group(2) if damage_match.group(2) is not None else "+0"  # Znajduje modyfikator
 
         # Usunięcie ostatniej wartości z dice_values, jeżeli modyfikator jest obecny
         if modifier != "+0" and dice_values:
             dice_values.pop(-1)
 
-    # Dzieli modyfikator na znak i wartość
+        # Dzieli modyfikator na znak i wartość
         modifier_sign = "+" if modifier[0] == '+' else "-"
         modifier_value = int(modifier[1:]) if len(modifier) > 1 else 0
 

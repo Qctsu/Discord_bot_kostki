@@ -3,6 +3,7 @@ import db_config
 import sqlite3
 import openpyxl
 
+
 async def create_table():
     async with aiosqlite.connect(db_config.get_database_path()) as db:
         cursor = await db.cursor()
@@ -47,9 +48,35 @@ async def create_table():
             )
         ''')
 
+        #Tworzenie tabeli do sesji
+        await cursor.execute('''
+            CREATE TABLE IF NOT EXISTS game_sessions (
+                session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                channel_id TEXT NOT NULL,
+                system_name TEXT NOT NULL,
+                gm_id TEXT NOT NULL,
+                gm_nick TEXT NOT NULL,
+                player_id TEXT,
+                player_nick TEXT,
+                active BOOLEAN DEFAULT TRUE
+            )
+        ''')
+
+        #Tworzenie tabeli dla graczy
+        await cursor.execute('''
+            CREATE TABLE IF NOT EXISTS session_players (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER,
+                player_id TEXT NOT NULL,
+                player_nick TEXT NOT NULL,
+                FOREIGN KEY(session_id) REFERENCES game_sessions(session_id)
+            )
+        ''')
+
         await db.commit()
 
-#Zaczytywanie UTC
+
+# Zaczytywanie UTC
 def load_data_from_excel_to_db(excel_file):
     workbook = openpyxl.load_workbook(excel_file)
     sheet = workbook.active
@@ -75,5 +102,6 @@ def load_data_from_excel_to_db(excel_file):
         conn.commit()
 
     conn.close()
+
 
 load_data_from_excel_to_db('UTC.xlsx')

@@ -2,7 +2,7 @@ import datetime
 from nextcord.ext import commands
 from nextcord import Embed
 import asyncio
-from DataBase.active_systems import add_active_system, remove_active_system, get_active_system
+from DataBase.active_systems import add_active_system, remove_active_system, get_active_system, initialize_session
 
 
 class Systems(commands.Cog):
@@ -54,6 +54,8 @@ class Systems(commands.Cog):
 
         await add_active_system(ctx.channel.id, system_name, duration_hours, formatted_activation_time,
                                 formatted_end_time)
+        # Dodaj inicjalizację sesji po aktywowaniu systemu
+        await initialize_session(ctx.channel.id, system_name, str(ctx.author.id), ctx.author.display_name)
 
         embed = Embed(
             title=f"System {system_name} aktywny",

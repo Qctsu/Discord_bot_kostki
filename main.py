@@ -1,9 +1,8 @@
 # Importowanie niezbędnych modułów
 import aiosqlite
-
 import DataBase.tables_creation as DB_kostki
 from DataBase.active_systems import get_active_system, remove_active_system, deactivate_expired_systems, \
-    clear_active_systems
+    clear_active_systems, delete_session_from_game_sessions
 import datetime
 import os
 import re
@@ -18,6 +17,8 @@ from Commands.setting_commands import TimeZone
 import db_config
 from nextcord.ui import Select, View
 from langdetect import detect
+from Systems.gamesessions import GameSessions
+from Systems.SWAE_fight import Combat
 
 # Uzyskujemy ścieżkę do bazy danych
 database_path = db_config.get_database_path()
@@ -38,6 +39,8 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Dodanie Cog z komendą settimezone
 bot.add_cog(TimeZone(bot))
+bot.add_cog(GameSessions(bot))
+bot.add_cog(Combat(bot))
 
 
 async def check_and_deactivate_systems():
@@ -72,6 +75,7 @@ async def on_ready():
     print(f'Sprawdzanie usunięć z gildii')
     check_removal_dates.start()
 
+
 async def get_inviter(guild):
     try:
         # Pobieramy wpisy z dziennika audytu dotyczące dodania bota
@@ -94,7 +98,8 @@ async def get_inviter(guild):
 async def on_guild_join(guild):
     # Pobierz kilka ostatnich wiadomości z najbardziej aktywnego kanału
     # Zakładam, że pierwszy dostępny kanał tekstowy to "najbardziej aktywny"
-    channel = next((x for x in guild.channels if isinstance(x, nextcord.TextChannel) and x.permissions_for(guild.me).read_messages), None)
+    channel = next((x for x in guild.channels if
+                    isinstance(x, nextcord.TextChannel) and x.permissions_for(guild.me).read_messages), None)
 
     if channel:
         messages = await channel.history(limit=50).flatten()
@@ -107,12 +112,14 @@ async def on_guild_join(guild):
         if detected_language == "pl":
             lang = "pl"
         else:
-            lang = "eng" # Można tu dodać więcej warunków dla innych języków
+            lang = "eng"  # Można tu dodać więcej warunków dla innych języków
 
         # Dodanie wykrytego języka do tabeli konfiguracyjnej
         async with aiosqlite.connect(database_path) as db:
             cursor = await db.cursor()
-            await cursor.execute('''INSERT OR IGNORE INTO server_config (guild_id, language, localization, roll_localization) VALUES (?, ?, ?, ?)''', (guild.id, lang, lang, lang))
+            await cursor.execute(
+                '''INSERT OR IGNORE INTO server_config (guild_id, language, localization, roll_localization) VALUES (?, ?, ?, ?)''',
+                (guild.id, lang, lang, lang))
             await db.commit()
             await cursor.close()
 
@@ -124,8 +131,10 @@ async def on_guild_join(guild):
             print("Nie udało się uzyskać osoby zapraszającej bota.")  # Upewnij się, że ta linia nie jest wydrukowywana
             return
 
-        await inviter.send(f"Wykryłem, że dominujący język na serwerze to {lang}. Język został dodany do konfiguracji. Proszę o dalszą konfigurację.")
+        await inviter.send(
+            f"Wykryłem, że dominujący język na serwerze to {lang}. Język został dodany do konfiguracji. Proszę o dalszą konfigurację.")
         print("Wiadomość DM wysłana!")  # Upewnij się, że ta linia jest wydrukowywana
+
 
 class LanguageSelect(Select):
     def __init__(self):
@@ -138,9 +147,10 @@ class LanguageSelect(Select):
     async def callback(self, interaction: nextcord.Interaction):
         await interaction.response.send_message(f"Wybrano język: {self.values[0]}")
         # Można tutaj dodać aktualizację języka w bazie danych
+
+
 @bot.command(name='config', aliases=['konfiguracja'])
 async def config(ctx, action=None, setting_name=None, value=None):
-
     # Usuń wiadomość z komendą
     try:
         await ctx.message.delete()
@@ -309,14 +319,17 @@ async def on_reaction_add(reaction, user):
         else:
             await remove_active_system(channel_id)
 
+
 @bot.event
 async def on_guild_remove(guild):
     removal_date = datetime.datetime.utcnow()
     async with aiosqlite.connect(database_path) as db:
         cursor = await db.cursor()
-        await cursor.execute('''UPDATE server_config SET removal_date = ? WHERE guild_id = ?''', (removal_date, guild.id))
+        await cursor.execute('''UPDATE server_config SET removal_date = ? WHERE guild_id = ?''',
+                             (removal_date, guild.id))
         await db.commit()
         await cursor.close()
+
 
 @tasks.loop(hours=24)  # Sprawdzanie co 24 godziny
 async def check_removal_dates():
@@ -333,6 +346,7 @@ async def check_removal_dates():
 
         await db.commit()
         await cursor.close()
+
 
 # obsługa błędów
 @bot.event
