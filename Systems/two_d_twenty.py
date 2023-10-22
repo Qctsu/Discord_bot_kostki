@@ -70,17 +70,10 @@ def roll_k20(message_content, display_name):
             crits += 1
         elif roll == 20:
             complications += 1
-        elif focus is not None:
-            if roll <= 1:
+        elif roll <= threshold:
+            if focus is not None and roll <= focus:
                 successes += 2
-            elif roll <= focus:
-                successes += 2
-            elif roll <= threshold:
-                successes += 1
-        else:
-            if roll <= 1:
-                successes += 2
-            elif roll <= threshold:
+            else:
                 successes += 1
 
     # Sortowanie i przygotowanie listy wyników
@@ -92,22 +85,11 @@ def roll_k20(message_content, display_name):
             result_str += "Sukces (**Kryt**)"
         elif roll == 20:
             result_str += "Porażka (**Komplikacja**)"
-        elif focus is not None:
-            if roll <= 1:
-                result_str += "Sukces (**Kryt**)"
-            elif roll <= focus:
-                result_str += "Sukces"
-            elif roll <= threshold:
-                result_str += "Sukces"
-            else:
-                result_str += "Porażka"
+        elif roll <= threshold:
+            result_str += "Sukces"
         else:
-            if roll <= 1:
-                result_str += "Sukces (**Kryt**)"
-            elif roll <= threshold:
-                result_str += "Sukces"
-            else:
-                result_str += "Porażka"
+            result_str += "Porażka"
+
         results.append(result_str)
 
     # Tworzenie tytułu embeda, uwzględniając informację o fokusie, jeśli jest dostępny
@@ -173,40 +155,57 @@ async def handle_reaction_add_2d20(reaction, user, bot):
                 reroll_indexes.append(i)
 
         original_rolls = [int(re.search(r'\d+', res).group()) for res in message.embeds[0].description.split('\n')]
-        threshold = int(re.search(r'(\d+)$', message.embeds[0].title).group())
+
+        # Tworzenie kopii oryginalnych rzutów
+        new_rolls = original_rolls.copy()
+
         successes, crits, complications = 0, 0, 0
+
+        threshold = int(re.search(r'(\d+)$', message.embeds[0].title).group())
+        focus_match = re.search(r' oraz dla fokusu (\d+)$', message.embeds[0].title)
+        focus = int(focus_match.group(1)) if focus_match else None
 
         rerolled_values = {}
         for i in reroll_indexes:
             new_roll = random.randint(1, 20)
-            rerolled_values[i] = (original_rolls[i], new_roll)
-            original_rolls[i] = new_roll
+            rerolled_values[i] = (new_rolls[i], new_roll)
+            new_rolls[i] = new_roll
 
-        original_rolls.sort()
-
-        for roll in original_rolls:
-            if roll == 1:
+        for index, new_roll in enumerate(new_rolls):
+            # Liczenie sukcesów, krytycznych sukcesów i komplikacji
+            if new_roll == 1:
                 successes += 2
                 crits += 1
-            elif roll == 20:
+            elif new_roll == 20:
                 complications += 1
-            elif roll <= threshold:
-                successes += 1
-
-        await message.delete()
+            elif new_roll <= threshold:
+                if focus is not None and new_roll <= focus:
+                    successes += 2
+                else:
+                    successes += 1
 
         results = []
-        for index, roll in enumerate(original_rolls):
+        for index, roll in enumerate(new_rolls):
             prev_value = rerolled_values.get(index, (None, None))[0]
 
             if prev_value is not None:
-                results.append(
-                    f"{roll} (było {prev_value}) - {'Sukces (**Kryt**)' if roll == 1 else 'Porażka (**Komplikacja**)' if roll == 20 else 'Sukces' if roll <= threshold else 'Porażka'}"
-                )
+                result_str = f"{roll} (było {prev_value}) - "
             else:
-                results.append(
-                    f"{roll} - {'Sukces (**Kryt**)' if roll == 1 else 'Porażka (**Komplikacja**)' if roll == 20 else 'Sukces' if roll <= threshold else 'Porażka'}"
-                )
+                result_str = f"{roll} - "
+
+            if roll == 1:
+                result_str += "Sukces (**Kryt**)"
+            elif roll == 20:
+                result_str += "Porażka (**Komplikacja**)"
+            elif roll <= threshold:
+                result_str += "Sukces"
+            else:
+                result_str += "Porażka"
+
+            results.append(result_str)
+
+        # Sortowanie wyników przed dodaniem ich do wiadomości
+        results.sort(key=lambda x: int(x.split(' ')[0]))
 
         # Utwórz i sformatuj embed z wynikami po przerzucie
         embed = Embed(
@@ -230,3 +229,4 @@ async def handle_reaction_add_2d20(reaction, user, bot):
         )
 
         await message.channel.send(embed=embed)
+        await message.delete()
