@@ -50,7 +50,7 @@ class Combat(commands.Cog):
         self.used_cards.update(self.DECK)
 
         # Losowanie kart inicjatywy
-        cards = [(combatant, draw_card(self.DECK)) for combatant in all_combatants]
+        cards = [(combatant, draw_card(self.DECK, self.used_cards)) for combatant in all_combatants]
         sorted_cards = sort_cards(cards)
 
         # Sprawdź, czy wśród wylosowanych kart jest Joker
@@ -59,10 +59,12 @@ class Combat(commands.Cog):
         # Jeśli Joker został wylosowany, przetasuj talie i wyświetl odpowiednią wiadomość
         if joker_drawn:
             self.used_cards.clear()  # Wyczyść użyte karty
+            self.DECK = [(rank, suit) for suit in SUITS for rank in RANKS] + [('Joker', 'Czerwony'), ('Joker', 'Czarny')]
             random.shuffle(self.DECK)  # Przetasuj talie
             await ctx.send("Joker został wylosowany. Talia została przetasowana.")
 
-        # Sortowanie inicjatywy
+
+    # Sortowanie inicjatywy
         combat_order = "\n".join([f"{card[0]}: {card[1][0]} of {card[1][1]}" for card in sorted_cards])
 
         # # Tworzenie embedu z wynikami inicjatywy
@@ -178,16 +180,22 @@ async def get_players_for_active_system(channel_id):
         return result if result else []
 
 
-def draw_card(deck):
-    card = random.choice(deck)
-    deck.remove(card)
+def draw_card(deck, used_cards):
+    available_cards = [card for card in deck if card not in used_cards]
+    if not available_cards:
+        used_cards.clear()
+        available_cards = deck
+    card = random.choice(available_cards)
+    used_cards.add(card)
     return card
 
 
+
 def sort_cards(cards):
-    def card_value(card):
-        rank_index = RANKS.index(card[0]) if card[0] in RANKS else len(RANKS)  # Indeks rangi lub długość listy RANKS
-        suit_index = SUITS.index(card[1]) if card[1] in SUITS else len(SUITS)  # Indeks koloru lub długość listy SUITS
+    def card_value(card_tuple):
+        card = card_tuple[1]
+        rank_index = RANKS.index(card[0]) if card[0] in RANKS else len(RANKS)
+        suit_index = SUITS.index(card[1]) if card[1] in SUITS else len(SUITS)
         return (rank_index, suit_index)
 
     return sorted(cards, key=card_value, reverse=True)

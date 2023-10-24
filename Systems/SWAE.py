@@ -236,3 +236,7 @@ async def handle_reaction_add_SWAE(reaction, user, bot, user_last_commands):
 
                 # Usuń reakcję po przerzucie
                 await reaction.message.clear_reactions()
+
+        # elif reaction.emoji == '✅' and message.author == bot.user:
+        #     from Systems.SWAE_fight import
+        #     await
