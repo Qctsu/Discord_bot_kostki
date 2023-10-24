@@ -136,9 +136,9 @@ async def handle_reaction_add_2d20(reaction, user, bot):
     user_display_name = message.embeds[0].title.split()[0]
 
     # Jeśli użytkownik, który dodał reakcję, nie jest tym samym użytkownikiem, który wysłał oryginalną wiadomość
-    if user_display_name != user.display_name:
-        await reaction.remove(user)  # Usuń reakcję tego użytkownika
-        return
+    # if user_display_name != user.display_name:
+    #     await reaction.remove(user)  # Usuń reakcję tego użytkownika
+    #     return
 
     # Sprawdź, czy reakcja jest ":x:"
     if reaction.emoji == '❌' and message.author == bot.user:
@@ -161,8 +161,9 @@ async def handle_reaction_add_2d20(reaction, user, bot):
 
         successes, crits, complications = 0, 0, 0
 
-        threshold = int(re.search(r'(\d+)$', message.embeds[0].title).group())
-        focus_match = re.search(r' oraz dla fokusu (\d+)$', message.embeds[0].title)
+        threshold_match = re.search(r'dla testu (\d+)', message.embeds[0].title)
+        focus_match = re.search(r'oraz dla fokusu (\d+)$', message.embeds[0].title)
+        threshold = int(threshold_match.group(1))
         focus = int(focus_match.group(1)) if focus_match else None
 
         rerolled_values = {}
