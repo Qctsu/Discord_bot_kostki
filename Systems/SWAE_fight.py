@@ -24,7 +24,7 @@ class Combat(commands.Cog):
         self.DECK = [(rank, suit) for suit in SUITS for rank in RANKS] + [('Joker', 'Czerwony'), ('Joker', 'Czarny')]
 
     async def draw_initiative(self, ctx, num_enemies):
-        players = await get_players_for_active_system(ctx.channel.id)
+        players = self.selected_players_for_channel.get(ctx.channel.id)
         if not players:
             await ctx.send("Brak graczy w tej sesji.")
             return
