@@ -29,6 +29,14 @@ async def create_table():
 
         # Tworzenie tabeli guild_timezones, jeśli nie istnieje
         await cursor.execute('''
+            CREATE TABLE IF NOT EXISTS time_zones (
+                timezone TEXT PRIMARY KEY,
+                utc_label TEXT
+            )
+        ''')
+
+        # Tworzenie tabeli guild_timezones, jeśli nie istnieje
+        await cursor.execute('''
             CREATE TABLE IF NOT EXISTS server_config (
                 id INTEGER PRIMARY KEY,
                 guild_id INTEGER UNIQUE,
@@ -48,7 +56,7 @@ async def create_table():
             )
         ''')
 
-        #Tworzenie tabeli do sesji
+        # Tworzenie tabeli do sesji
         await cursor.execute('''
             CREATE TABLE IF NOT EXISTS game_sessions (
                 session_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,7 +70,7 @@ async def create_table():
             )
         ''')
 
-        #Tworzenie tabeli dla graczy
+        # Tworzenie tabeli dla graczy
         await cursor.execute('''
             CREATE TABLE IF NOT EXISTS session_players (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -1,5 +1,5 @@
 from nextcord.ext import commands
-from nextcord import Embed, Member, Message, Reaction
+from nextcord import Embed, Member, Reaction
 import db_config
 import aiosqlite
 import random
@@ -7,12 +7,19 @@ import random
 NUMBER_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
 CHECK_EMOJI = "✅"
 
-# SUITS = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
-# RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
-# DECK = [(rank, suit) for suit in SUITS for rank in RANKS] + [('Joker', 'Red'), ('Joker', 'Black')]
 SUITS = ['Kier', 'Karo', 'Trefl', 'Pik']
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Walet', 'Królowa', 'Król', 'As']
 DECK = [(rank, suit) for suit in SUITS for rank in RANKS] + [('Joker', 'Czerwony'), ('Joker', 'Czarny')]
+
+
+async def show_initiative_results(channel, sorted_cards):
+    # Tworzenie embedu z wynikami inicjatywy
+    embed = Embed(title="Wyniki inicjatywy:", color=0x3498db)
+
+    for index, (participant, card) in enumerate(sorted_cards, start=1):
+        embed.add_field(name=f"{index}. {participant}", value=f"{card[0]} {card[1]}", inline=False)
+
+    await channel.send(embed=embed)
 
 
 class Combat(commands.Cog):
@@ -36,7 +43,7 @@ class Combat(commands.Cog):
             await ctx.send("Liczba wrogów musi być większa od zera.")
             return
 
-        all_combatants = selected_names + [f"Wrog {i + 1}" for i in range(num_enemies)]
+        all_combatants = selected_names + [f"Wróg {i + 1}" for i in range(num_enemies)]
 
         # Sprawdź, czy w talii jest wystarczająco dużo kart
         if len(self.DECK) < num_players + num_enemies:
@@ -59,30 +66,14 @@ class Combat(commands.Cog):
         # Jeśli Joker został wylosowany, przetasuj talie i wyświetl odpowiednią wiadomość
         if joker_drawn:
             self.used_cards.clear()  # Wyczyść użyte karty
-            self.DECK = [(rank, suit) for suit in SUITS for rank in RANKS] + [('Joker', 'Czerwony'), ('Joker', 'Czarny')]
+            self.DECK = [(rank, suit) for suit in SUITS for rank in RANKS] + [('Joker', 'Czerwony'),
+                                                                              ('Joker', 'Czarny')]
             random.shuffle(self.DECK)  # Przetasuj talie
             await ctx.send("Joker został wylosowany. Talia została przetasowana.")
 
-
-    # Sortowanie inicjatywy
-        combat_order = "\n".join([f"{card[0]}: {card[1][0]} of {card[1][1]}" for card in sorted_cards])
-
-        # # Tworzenie embedu z wynikami inicjatywy
-        # embed = Embed(title="Wyniki inicjatywy:", description=combat_order, color=0x3498db)
-        # await ctx.send(embed=embed)
-
         if num_enemies > 0:
-            # Pokaż embed z wynikami tylko wtedy, gdy jest przynajmniej 1 wrog
-            await self.show_initiative_results(ctx.channel, sorted_cards)
-
-    async def show_initiative_results(self, channel, sorted_cards):
-        # Tworzenie embedu z wynikami inicjatywy
-        embed = Embed(title="Wyniki inicjatywy:", color=0x3498db)
-
-        for index, (participant, card) in enumerate(sorted_cards, start=1):
-            embed.add_field(name=f"{index}. {participant}", value=f"{card[0]} {card[1]}", inline=False)
-
-        await channel.send(embed=embed)
+            # Pokaż embed z wynikami tylko wtedy, gdy jest przynajmniej 1 wróg
+            await show_initiative_results(ctx.channel, sorted_cards)
 
     @commands.command(name="walka")
     async def walka(self, ctx, *, subcommand: str):
@@ -98,7 +89,8 @@ class Combat(commands.Cog):
             await self.end_combat(ctx)  # Dodana komenda !walka koniec
         else:
             await ctx.send(
-                "Niewłaściwe użycie komendy `!walka`. Użyj `!walka start`, `!walka <liczba_wrogow>` lub `!walka koniec`.")
+                "Niewłaściwe użycie komendy `!walka`. Użyj `!walka start`, `!walka <liczba_wrogów>` lub `!walka "
+                "koniec`.")
 
     async def end_combat(self, ctx):
         # Resetuj używane karty i usuń informacje o wybranej sesji
@@ -190,12 +182,11 @@ def draw_card(deck, used_cards):
     return card
 
 
-
 def sort_cards(cards):
     def card_value(card_tuple):
         card = card_tuple[1]
         rank_index = RANKS.index(card[0]) if card[0] in RANKS else len(RANKS)
         suit_index = SUITS.index(card[1]) if card[1] in SUITS else len(SUITS)
-        return (rank_index, suit_index)
+        return rank_index, suit_index
 
     return sorted(cards, key=card_value, reverse=True)

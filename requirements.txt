@@ -1,0 +1,5 @@
+aiosqlite
+nextcord
+python-dotenv
+langdetect
+openpyxl

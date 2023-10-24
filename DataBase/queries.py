@@ -1,6 +1,7 @@
 import aiosqlite
 import db_config
 
+
 async def set_timezone(user_id, timezone):
     async with aiosqlite.connect(db_config.get_database_path()) as db:
         cursor = await db.cursor()
@@ -11,6 +12,7 @@ async def set_timezone(user_id, timezone):
         ''', (str(user_id), timezone))
 
         await db.commit()
+
 
 async def get_timezone(user_id):
     async with aiosqlite.connect(db_config.get_database_path()) as db:
