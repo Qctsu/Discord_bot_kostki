@@ -27,7 +27,7 @@ class Combat(commands.Cog):
         self.bot = bot
         self.active_combats = {}
         self.selected_players_for_channel = {}
-        self.used_cards = set()  # Zbiór używanych kart
+        self.combat_used_cards = {}
         self.DECK = [(rank, suit) for suit in SUITS for rank in RANKS] + [('Joker', 'Czerwony'), ('Joker', 'Czarny')]
 
     async def draw_initiative(self, ctx, num_enemies):
@@ -45,19 +45,11 @@ class Combat(commands.Cog):
 
         all_combatants = selected_names + [f"Wróg {i + 1}" for i in range(num_enemies)]
 
-        # Sprawdź, czy w talii jest wystarczająco dużo kart
-        if len(self.DECK) < num_players + num_enemies:
-            # Jeśli jest zbyt mało kart, przetasuj talie i wyświetl wiadomość
-            self.used_cards.clear()  # Wyczyść użyte karty
-            random.shuffle(self.DECK)  # Przetasuj talie
-            await ctx.send("Zbyt mało kart w talii. Talia została przetasowana.")
-            return
-
-        # Dodaj użyte karty do zbioru używanych kart
-        self.used_cards.update(self.DECK)
+        if ctx.channel.id not in self.combat_used_cards:
+            self.combat_used_cards[ctx.channel.id] = set()
 
         # Losowanie kart inicjatywy
-        cards = [(combatant, draw_card(self.DECK, self.used_cards)) for combatant in all_combatants]
+        cards = [(combatant, self.draw_card(self.DECK, self.combat_used_cards, ctx.channel.id)) for combatant in all_combatants]
         sorted_cards = sort_cards(cards)
 
         # Sprawdź, czy wśród wylosowanych kart jest Joker
@@ -65,15 +57,23 @@ class Combat(commands.Cog):
 
         # Jeśli Joker został wylosowany, przetasuj talie i wyświetl odpowiednią wiadomość
         if joker_drawn:
-            self.used_cards.clear()  # Wyczyść użyte karty
-            self.DECK = [(rank, suit) for suit in SUITS for rank in RANKS] + [('Joker', 'Czerwony'),
-                                                                              ('Joker', 'Czarny')]
-            random.shuffle(self.DECK)  # Przetasuj talie
+            self.combat_used_cards[ctx.channel.id].clear()
+            random.shuffle(self.DECK)
             await ctx.send("Joker został wylosowany. Talia została przetasowana.")
 
         if num_enemies > 0:
             # Pokaż embed z wynikami tylko wtedy, gdy jest przynajmniej 1 wróg
             await show_initiative_results(ctx.channel, sorted_cards)
+
+    def draw_card(self, deck, used_cards, channel_id):
+        available_cards = [card for card in deck if card not in used_cards[channel_id]]
+        if not available_cards:
+            used_cards[channel_id].clear()
+            available_cards = deck
+        card = random.choice(available_cards)
+        used_cards[channel_id].add(card)
+        return card
+
 
     @commands.command(name="walka")
     async def walka(self, ctx, *, subcommand: str):
@@ -96,6 +96,7 @@ class Combat(commands.Cog):
         # Resetuj używane karty i usuń informacje o wybranej sesji
         self.used_cards.clear()
         self.selected_players_for_channel.pop(ctx.channel.id, None)
+        self.combat_used_cards.pop(ctx.channel.id, set())
         await ctx.send("Walka zakończona. Karty zostały przetasowane.")
 
     async def start_combat(self, ctx):
@@ -172,21 +173,13 @@ async def get_players_for_active_system(channel_id):
         return result if result else []
 
 
-def draw_card(deck, used_cards):
-    available_cards = [card for card in deck if card not in used_cards]
-    if not available_cards:
-        used_cards.clear()
-        available_cards = deck
-    card = random.choice(available_cards)
-    used_cards.add(card)
-    return card
-
-
 def sort_cards(cards):
     def card_value(card_tuple):
         card = card_tuple[1]
         rank_index = RANKS.index(card[0]) if card[0] in RANKS else len(RANKS)
-        suit_index = SUITS.index(card[1]) if card[1] in SUITS else len(SUITS)
+        # Definiowanie kolejności kolorów według zasad
+        suit_order = {'Pik': 0, 'Kier': 1, 'Karo': 2, 'Trefl': 3}
+        suit_index = suit_order.get(card[1], len(suit_order))
         return rank_index, suit_index
 
     return sorted(cards, key=card_value, reverse=True)
