@@ -1,6 +1,6 @@
 import aiosqlite
 from datetime import datetime, timedelta
-import db_config
+import config.db_config as db_config
 
 
 # Funkcja do dodawania aktywnego systemu do bazy danych

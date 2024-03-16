@@ -1,6 +1,6 @@
 from nextcord.ext import commands
 from nextcord import Embed, Member, Reaction
-import db_config
+import config.db_config as db_config
 import aiosqlite
 import random
 

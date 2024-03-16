@@ -1,31 +1,39 @@
-# Importowanie niezbędnych modułów
-import aiosqlite
-import DataBase.tables_creation as DB_kostki
-from DataBase.active_systems import get_active_system, remove_active_system, deactivate_expired_systems, \
-    clear_active_systems, delete_session_from_game_sessions
+import asyncio
 import datetime
 import os
 import re
+from pathlib import Path
+
+import aiosqlite
 from dotenv import load_dotenv
-import nextcord
-from nextcord.ext import commands, tasks
-from nextcord import Embed
-from Systems.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20  # Importowanie funkcji
-from Systems.SWAE import damage, test, handle_reaction_add_SWAE  # Importowanie funkcji
-import asyncio
-from Commands.setting_commands import TimeZone
-import db_config
-from nextcord.ui import Select, View
 from langdetect import detect
-from Systems.gamesessions import GameSessions
-from Systems.SWAE_fight import Combat
+import nextcord
+from nextcord import Embed
+from nextcord.ext import commands, tasks
+from nextcord.ui import Select, View
+
+import config.db_config as db_config
+import database.tables_creation as tables_creation
+from database.active_systems import (clear_active_systems, deactivate_expired_systems, get_active_system, remove_active_system)
+from commands.bot_tools.setting_commands import TimeZone
+from commands.entertainment.systems.additional.add_to_game_session import GameSessions
+from commands.entertainment.systems.parser.neutral import parse_dice_command, roll_dice
+from commands.entertainment.systems.swae.SWAE import damage, test, handle_reaction_add_SWAE
+from commands.entertainment.systems.swae.SWAE_fight import Combat
+from commands.entertainment.systems.two_d_twenty.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20
+from commands.info.help_description import get_help_message
+
 
 # Uzyskujemy ścieżkę do bazy danych
 database_path = db_config.get_database_path()
 print(f"Ścieżka do bazy danych: {database_path}")
 
-# Wczytywanie zmiennych środowiskowych z pliku .env
-load_dotenv()
+# Ścieżka do katalogu config relatywnie do bieżącego pliku
+env_path = Path('config') / '.env'
+
+# Wczytywanie zmiennych środowiskowych z pliku .env znajdującego się w katalogu config
+load_dotenv(dotenv_path=env_path)
+
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 # Konfiguracja intencji bota
@@ -35,7 +43,7 @@ intents.reactions = True
 intents.messages = True
 
 # Inicjalizacja bota
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix=['!', '/'], intents=intents, help_command=None)
 
 # Dodanie Cog z komendą settimezone
 bot.add_cog(TimeZone(bot))
@@ -64,10 +72,10 @@ user_last_commands = {}
 async def on_ready():
     print(f'Zalogowano jako {bot.user}')
 
-    await DB_kostki.create_table()
+    await tables_creation.create_table()
     print(f'Tabela (jeśli nie istniała) została utworzona')
 
-    bot.load_extension('Systems.Systems')
+    bot.load_extension('commands.entertainment.systems.additional.active_system_description')
     print(f'Pakiet systemów załadowany')
 
     bot.loop.create_task(check_and_deactivate_systems())
@@ -190,6 +198,18 @@ async def config(ctx, action=None, setting_name=None, value=None):
 
         # Zamykamy kursor
         await cursor.close()
+
+@bot.command(name='rzuc', help='Rzuć kostkami według podanej specyfikacji. Użycie: !rzuc 2k6+2 3k100+10 5k10-2')
+async def roll(ctx, *, message: str):
+    dice_commands = parse_dice_command(message)  # Wywołanie funkcji parsującej komendę
+    embed = roll_dice(dice_commands, ctx.author.display_name)  # Wywołanie funkcji rzutu kostkami i tworzenie embeda
+    await ctx.send(embed=embed)  # Wysyłanie embeda na kanał
+
+@bot.command(name='help', help='Pokazuje tę wiadomość')
+async def custom_help(ctx):
+    help_message = get_help_message(bot.command_prefix)  # Wywołanie funkcji do uzyskania opisu komend
+    await ctx.author.send(help_message)  # Wysyłanie opisu komend na DM użytkownika
+    await ctx.send(f"{ctx.author.mention}, wysłałem Ci listę komend na DM!")  # Opcjonalne potwierdzenie na kanale
 
 
 # Komenda !clearsystems do czyszczenia aktywności wszystkich systemów
@@ -319,7 +339,6 @@ async def on_reaction_add(reaction, user):
         else:
             await remove_active_system(channel_id)
 
-
 @bot.event
 async def on_guild_remove(guild):
     removal_date = datetime.datetime.utcnow()
@@ -329,7 +348,6 @@ async def on_guild_remove(guild):
                              (removal_date, guild.id))
         await db.commit()
         await cursor.close()
-
 
 @tasks.loop(hours=24)  # Sprawdzanie co 24 godziny
 async def check_removal_dates():
@@ -355,10 +373,8 @@ async def on_command_error(ctx, error):
         return
     raise error
 
-
 def add_user_command(message_id, user_id, command):
     user_last_commands[message_id] = {"user_id": user_id, "command": command}
-
 
 # Uruchamianie bota
 bot.run(TOKEN)

@@ -1,7 +1,7 @@
 import asyncio
 import nextcord
 from nextcord.ext import commands
-from DataBase.queries import set_timezone, get_timezone
+from database.queries import set_timezone, get_timezone
 
 class TimeZone(commands.Cog):
     def __init__(self, bot):

@@ -2,7 +2,7 @@ import datetime
 from nextcord.ext import commands
 from nextcord import Embed
 import asyncio
-from DataBase.active_systems import add_active_system, remove_active_system, get_active_system, initialize_session
+from database.active_systems import add_active_system, remove_active_system, get_active_system, initialize_session
 
 
 class Systems(commands.Cog):

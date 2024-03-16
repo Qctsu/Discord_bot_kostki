@@ -1,7 +1,7 @@
 from nextcord.ext import commands
 from nextcord import Embed
-from DataBase.active_systems import get_active_system
-import db_config
+from database.active_systems import get_active_system
+import config.db_config as db_config
 import aiosqlite
 
 
