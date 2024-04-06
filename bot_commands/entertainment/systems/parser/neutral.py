@@ -7,19 +7,20 @@ def roll_dice(dice_notation: str):
         return np.random.randint(1, sides + 1, rolls)
 
     def parse_expression(expression):
-        # Zmodyfikowane, aby lepiej obsłużyć różne typy modyfikatorów
-        matches = re.findall(r'([+-]?)\s*(\d*)[dDkK](\d+)|([+-]\d+)', expression)
+        # Zmodyfikowane, aby lepiej obsłużyć różne typy modyfikatorów i różnicować między 'd' a 'k'
+        matches = re.findall(r'([+-]?)\s*(\d*)([dDkK])(\d+)|([+-]\d+)', expression)
         details = []
 
-        for sign, num_rolls, sides, constant in matches:
+        for sign, num_rolls, dice_type, sides, constant in matches:
+            dice_char = dice_type.lower()  # Przechowaj informację, czy to 'd' czy 'k'
             if constant:  # Obsługa stałych wartości
                 value = int(constant)
-                details.append((sign, 0, 0, [], value, 'constant'))
+                details.append((sign, 0, 0, dice_char, [], value, 'constant'))
             else:
                 rolls = int(num_rolls) if num_rolls else 1
                 dice_results = single_roll(rolls, int(sides))
                 sum_of_dice = np.sum(dice_results)
-                details.append((sign, rolls, sides, dice_results, sum_of_dice, 'dice'))
+                details.append((sign, rolls, sides, dice_char, dice_results, sum_of_dice, 'dice'))
 
         return details
 
@@ -35,19 +36,19 @@ def roll_dice(dice_notation: str):
         mod_details = []
 
         for part in parts:
-            for sign, rolls, sides, dice_results, value, type in parse_expression(part.strip()):
+            for sign, rolls, sides, dice_char, dice_results, value, type in parse_expression(part.strip()):
                 if sign:
                     # Modyfikatory, zarówno stałe wartości jak i rzuty
                     mod_sum += value if sign == '+' else -value
                     if type == 'dice':
-                        mod_details.append(f"{sign}{rolls}k{sides}: {', '.join(map(str, dice_results))} => Suma: {sign}{value}")
+                        mod_details.append(f"{sign}{rolls}{dice_char}{sides}: {', '.join(map(str, dice_results))} => Suma: {sign}{value}")
                     else:  # Stałe wartości
                         mod_details.append(f"{sign}{value}")
                 else:
                     # Główny rzut
                     expr_sum += value
                     if type == 'dice':
-                        expr_details.append(f"{rolls}k{sides}: {', '.join(map(str, dice_results))}")
+                        expr_details.append(f"{rolls}{dice_char}{sides}: {', '.join(map(str, dice_results))}")
 
         final_sum = expr_sum + mod_sum
         total_sum += final_sum
@@ -67,7 +68,7 @@ def generate_embed(dice_expression: str, author: str):
     embed.add_field(name="Łączna suma punktów", value=str(total_sum), inline=False)
     return embed
 
-# Zmodyfikowana wersja funkcji generate_embed, aby działała w środowisku bez nextcord
+# # Zmodyfikowana wersja funkcji generate_embed, aby działała w środowisku bez nextcord
 # def generate_embed(dice_expression: str, author: str):
 #     total_sum, results = roll_dice(dice_expression)
 #     print(f"{author} - wyniki rzutów")  # Wyświetlamy tytuł
@@ -76,6 +77,6 @@ def generate_embed(dice_expression: str, author: str):
 #     print(f"Łączna suma punktów: {total_sum}")  # Wyświetlamy łączną sumę punktów
 #
 # # Przykładowe wywołanie
-# dice_expression = "k12+1"
+# dice_expression = " 2d20-4d10 3k6+d2 k12+1 3d6"
 # author = "Gracz1"
 # generate_embed(dice_expression, author)
