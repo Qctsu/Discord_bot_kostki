@@ -62,14 +62,14 @@ def roll_dice(dice_notation: str):
 
     return total_sum, detailed_results  # Zwraca łączną sumę i szczegółowe wyniki
 
-# def generate_embed(dice_expression: str, author: str):
-#     # Tworzy embed z wynikami rzutów kośćmi dla autora
-#     total_sum, results = roll_dice(dice_expression)  # Oblicz wyniki rzutów na podstawie notacji
-#     embed = nextcord.Embed(title=f"{author} - wyniki rzutów", description="", color=0x00ff00)  # Utwórz embed z podstawowymi informacjami
-#     for result in results:
-#         embed.add_field(name="Rzut", value=result, inline=False)  # Dodaj pola dla każdego rzutu
-#     embed.add_field(name="Łączna suma punktów", value=str(total_sum), inline=False)  # Dodaj pole z łączną sumą punktów
-#     return embed  # Zwróć gotowy embed
+def generate_embed(dice_expression: str, author: str):
+    # Tworzy embed z wynikami rzutów kośćmi dla autora
+    total_sum, results = roll_dice(dice_expression)  # Oblicz wyniki rzutów na podstawie notacji
+    embed = nextcord.Embed(title=f"{author} - wyniki rzutów", description="", color=0x00ff00)  # Utwórz embed z podstawowymi informacjami
+    for result in results:
+        embed.add_field(name="Rzut", value=result, inline=False)  # Dodaj pola dla każdego rzutu
+    embed.add_field(name="Łączna suma punktów", value=str(total_sum), inline=False)  # Dodaj pole z łączną sumą punktów
+    return embed  # Zwróć gotowy embed
 #
 # # Zmodyfikowana wersja funkcji generate_embed, aby działała w środowisku bez nextcord
 # def generate_embed(dice_expression: str, author: str):
