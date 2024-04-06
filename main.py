@@ -15,13 +15,14 @@ from nextcord.ui import Select, View
 import config.db_config as db_config
 import database.tables_creation as tables_creation
 from database.active_systems import (clear_active_systems, deactivate_expired_systems, get_active_system, remove_active_system)
-from commands.bot_tools.setting_commands import TimeZone
-from commands.entertainment.systems.additional.add_to_game_session import GameSessions
-from commands.entertainment.systems.parser.neutral import parse_dice_command, roll_dice
-from commands.entertainment.systems.swae.SWAE import damage, test, handle_reaction_add_SWAE
-from commands.entertainment.systems.swae.SWAE_fight import Combat
-from commands.entertainment.systems.two_d_twenty.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20
-from commands.info.help_description import get_help_message
+from bot_commands.bot_tools.setting_commands import TimeZone
+from bot_commands.entertainment.systems.additional.add_to_game_session import GameSessions
+from bot_commands.entertainment.systems.parser.neutral import generate_embed
+from bot_commands.entertainment.systems.swae.SWAE import damage, test, handle_reaction_add_SWAE
+from bot_commands.entertainment.systems.swae.SWAE_fight import Combat
+from bot_commands.entertainment.systems.two_d_twenty.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20
+from bot_commands.info.help_description import get_help_message
+import bot_commands.entertainment.music
 
 
 # Uzyskujemy ścieżkę do bazy danych
@@ -75,7 +76,7 @@ async def on_ready():
     await tables_creation.create_table()
     print(f'Tabela (jeśli nie istniała) została utworzona')
 
-    bot.load_extension('commands.entertainment.systems.additional.active_system_description')
+    bot.load_extension('bot_commands.entertainment.systems.additional.active_system_description')
     print(f'Pakiet systemów załadowany')
 
     bot.loop.create_task(check_and_deactivate_systems())
@@ -199,11 +200,10 @@ async def config(ctx, action=None, setting_name=None, value=None):
         # Zamykamy kursor
         await cursor.close()
 
-@bot.command(name='rzuc', help='Rzuć kostkami według podanej specyfikacji. Użycie: !rzuc 2k6+2 3k100+10 5k10-2')
-async def roll(ctx, *, message: str):
-    dice_commands = parse_dice_command(message)  # Wywołanie funkcji parsującej komendę
-    embed = roll_dice(dice_commands, ctx.author.display_name)  # Wywołanie funkcji rzutu kostkami i tworzenie embeda
-    await ctx.send(embed=embed)  # Wysyłanie embeda na kanał
+@bot.command(name='rzuc', aliases=['r'], help='Rzuć kostkami według podanej specyfikacji. Użycie: !rzuc 2k6+2 3k100+10 5k10-2')
+async def rzuc(ctx, *, dice_expression: str):
+    embed = generate_embed(dice_expression, ctx.author.display_name)
+    await ctx.send(embed=embed)
 
 @bot.command(name='help', help='Pokazuje tę wiadomość')
 async def custom_help(ctx):
@@ -376,5 +376,6 @@ async def on_command_error(ctx, error):
 def add_user_command(message_id, user_id, command):
     user_last_commands[message_id] = {"user_id": user_id, "command": command}
 
+bot.load_extension('bot_commands.entertainment.music.music')
 # Uruchamianie bota
 bot.run(TOKEN)

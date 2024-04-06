@@ -3,3 +3,7 @@ nextcord
 python-dotenv
 langdetect
 openpyxl
+yt-dlp
+PyNaCl
+ffmpeg
+numpy
