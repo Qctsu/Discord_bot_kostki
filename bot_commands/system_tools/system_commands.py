@@ -2,6 +2,7 @@ from nextcord.ext import commands
 import datetime
 from nextcord import Embed
 
+
 class SystemCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -86,6 +87,7 @@ class SystemCommands(commands.Cog):
         )
         await ctx.send(embed=embed)
         self.bot.active_systems.clear()
+
 
 # Funkcja pomocnicza do łatwego dodawania komend do bota
 def setup(bot):

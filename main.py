@@ -17,13 +17,11 @@ import database.tables_creation as tables_creation
 from database.active_systems import (clear_active_systems, deactivate_expired_systems, get_active_system, remove_active_system)
 from bot_commands.bot_tools.setting_commands import TimeZone
 from bot_commands.entertainment.systems.additional.add_to_game_session import GameSessions
-from bot_commands.entertainment.systems.parser.neutral import generate_embed
-from bot_commands.entertainment.systems.swae.SWAE import damage, test, handle_reaction_add_SWAE
-from bot_commands.entertainment.systems.swae.SWAE_fight import Combat
-from bot_commands.entertainment.systems.two_d_twenty.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20
+from src.commands.systems.parser.neutral import generate_embed
+from src.commands.systems.swae.SWAE import damage, test, handle_reaction_add_SWAE
+from src.commands.systems.swae.SWAE_fight import Combat
+from src.commands.systems.two_d_twenty.two_d_twenty import roll_k6, roll_k20, handle_reaction_add_2d20
 from bot_commands.info.help_description import get_help_message
-import bot_commands.entertainment.music
-
 
 # Uzyskujemy ścieżkę do bazy danych
 database_path = db_config.get_database_path()
