@@ -3,6 +3,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import json
 
+
 def setup_logging(log_type='bot'):
     """
     Konfiguruje logowanie w zależności od typu logów.
@@ -39,7 +40,8 @@ def setup_logging(log_type='bot'):
     info_handler.addFilter(lambda record: record.levelno < logging.ERROR)
 
     # Konfiguracja logowania błędów do oddzielnego pliku z rotacją
-    error_handler = TimedRotatingFileHandler(error_log_file_path, when=when, interval=interval, backupCount=backup_count, encoding='utf-8', delay=False)
+    error_handler = TimedRotatingFileHandler(error_log_file_path, when=when, interval=interval,
+                                             backupCount=backup_count, encoding='utf-8', delay=False)
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 

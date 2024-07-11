@@ -2,8 +2,6 @@ import os
 import socket
 import json
 import logging
-import database.queries.tables_creation as tables_creation
-import aiosqlite
 
 from src.utils.logging_config import setup_logging
 
@@ -12,12 +10,12 @@ setup_logging(log_type='bot')
 
 # Wczytywanie konfiguracji z pliku config.json
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-config_path = 'config.json'
+config_path = os.path.join(base_dir, 'config', 'config.json')
 try:
     with open(config_path) as config_file:
         config = json.load(config_file)
-except Exception as e:
-    logging.error(f"Error reading config file: {e}")
+except Exception as err:
+    logging.error(f"Error reading config file: {err}")
     raise
 
 
@@ -38,16 +36,15 @@ def get_database_path():
 
         logging.info(f"Database path: {db_path}")
         # Ręczne wywołanie wyjątku
-        # raise ValueError("This is a manually triggered exception for testing.")
+        raise ValueError("This is a manually triggered exception for testing.")
         return db_path
-    except Exception as error:
-        logging.error(f"Error determining database path: {error}")
+    except Exception as err:
+        logging.error(f"Error determining database path: {err}")
         raise
 
 
-async def init_db():
-    await tables_creation.create_table()
-
-
-async def get_db():
-    return await aiosqlite.connect(get_database_path())
+# Przykładowe użycie
+try:
+    print(get_database_path())
+except Exception as err:
+    logging.error(f"Unhandled exception: {err}")

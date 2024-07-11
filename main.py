@@ -13,10 +13,10 @@ from nextcord.ext import commands, tasks
 from nextcord.ui import Select, View
 
 import config.db_config as db_config
-import database.tables_creation as tables_creation
-from database.active_systems import (clear_active_systems, deactivate_expired_systems, get_active_system, remove_active_system)
+from database.active_systems import (clear_active_systems, deactivate_expired_systems, get_active_system,
+                                     remove_active_system)
 from bot_commands.bot_tools.setting_commands import TimeZone
-from bot_commands.entertainment.systems.additional.add_to_game_session import GameSessions
+from database.queries import tables_creation
 from src.commands.systems.parser.neutral import generate_embed
 from src.commands.systems.swae.SWAE import damage, test, handle_reaction_add_SWAE
 from src.commands.systems.swae.SWAE_fight import Combat
@@ -25,7 +25,6 @@ from bot_commands.info.help_description import get_help_message
 
 # Uzyskujemy ścieżkę do bazy danych
 database_path = db_config.get_database_path()
-print(f"Ścieżka do bazy danych: {database_path}")
 
 # Ścieżka do katalogu config relatywnie do bieżącego pliku
 env_path = Path('config') / '.env'
@@ -198,10 +197,13 @@ async def config(ctx, action=None, setting_name=None, value=None):
         # Zamykamy kursor
         await cursor.close()
 
-@bot.command(name='rzuc', aliases=['r'], help='Rzuć kostkami według podanej specyfikacji. Użycie: !rzuc 2k6+2 3k100+10 5k10-2')
+
+@bot.command(name='rzuc', aliases=['r'],
+             help='Rzuć kostkami według podanej specyfikacji. Użycie: !rzuc 2k6+2 3k100+10 5k10-2')
 async def rzuc(ctx, *, dice_expression: str):
     embed = generate_embed(dice_expression, ctx.author.display_name)
     await ctx.send(embed=embed)
+
 
 @bot.command(name='help', help='Pokazuje tę wiadomość')
 async def custom_help(ctx):
@@ -337,6 +339,7 @@ async def on_reaction_add(reaction, user):
         else:
             await remove_active_system(channel_id)
 
+
 @bot.event
 async def on_guild_remove(guild):
     removal_date = datetime.datetime.utcnow()
@@ -346,6 +349,7 @@ async def on_guild_remove(guild):
                              (removal_date, guild.id))
         await db.commit()
         await cursor.close()
+
 
 @tasks.loop(hours=24)  # Sprawdzanie co 24 godziny
 async def check_removal_dates():
@@ -371,8 +375,10 @@ async def on_command_error(ctx, error):
         return
     raise error
 
+
 def add_user_command(message_id, user_id, command):
     user_last_commands[message_id] = {"user_id": user_id, "command": command}
+
 
 bot.load_extension('bot_commands.entertainment.music.music')
 # Uruchamianie bota
