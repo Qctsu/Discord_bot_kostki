@@ -37,6 +37,6 @@ def get_database_path():
         logging.info(f"Database path: {db_path}")
         # Ręczne wywołanie wyjątku
         return db_path
-    except Exception as err:
-        logging.error(f"Error determining database path: {err}")
+    except Exception as e:
+        logging.error(f"Error determining database path: {e}")
         raise
