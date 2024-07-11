@@ -24,18 +24,20 @@ def get_database_path():
     Zwraca odpowiednią ścieżkę do bazy danych w zależności od środowiska.
     """
     try:
+        # uruchamianie bota w docker
         if os.getenv("RUNNING_IN_DOCKER"):
             db_path = config['development_docker_database_path']
             logging.info("Running in Docker. Using development Docker database path.")
+        # uruchamianie bota lokalnie
         elif socket.gethostname() == config['server_hostname']:
             db_path = config['production_database_path']
             logging.info("Running on production server. Using production database path.")
+        # uruchamianie bota na serwerze
         else:
             db_path = config['development_database_path']
             logging.info("Running on development environment. Using development database path.")
 
         logging.info(f"Database path: {db_path}")
-        # Ręczne wywołanie wyjątku
         return db_path
     except Exception as e:
         logging.error(f"Error determining database path: {e}")
