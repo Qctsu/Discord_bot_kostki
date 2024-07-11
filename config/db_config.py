@@ -36,15 +36,7 @@ def get_database_path():
 
         logging.info(f"Database path: {db_path}")
         # Ręczne wywołanie wyjątku
-        raise ValueError("This is a manually triggered exception for testing.")
         return db_path
     except Exception as err:
         logging.error(f"Error determining database path: {err}")
         raise
-
-
-# Przykładowe użycie
-try:
-    print(get_database_path())
-except Exception as err:
-    logging.error(f"Unhandled exception: {err}")
